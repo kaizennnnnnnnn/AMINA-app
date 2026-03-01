@@ -1,26 +1,62 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: dark;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html,
+body {
+  min-height: 100%;
+  background: #09090b;
+  color: white;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+input,
+textarea,
+select,
+button {
+  outline: none;
+}
+
+.card {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(24, 24, 27, 0.9);
+  border-radius: 1rem;
+  padding: 1rem;
+}
+
+.input {
+  width: 100%;
+  border-radius: 0.9rem;
+  background: #18181b;
+  border: 1px solid #27272a;
+  padding: 0.85rem 1rem;
+  color: white;
+}
+
+.btn {
+  border-radius: 0.9rem;
+  padding: 0.85rem 1rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-primary {
+  background: white;
+  color: black;
+}
+
+.btn-dark {
+  background: #18181b;
+  border: 1px solid #27272a;
+  color: white;
+}
+
+.btn-pink {
+  background: #db2777;
+  color: white;
 }
