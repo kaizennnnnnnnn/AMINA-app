@@ -117,7 +117,11 @@ export default function AppPage() {
   const [finishText, setFinishText] = useState<Record<string, string>>({});
 
   const [bucketText, setBucketText] = useState('');
+  const [busyAction, setBusyAction] = useState<string | null>(null);
 
+function isBusy(action: string) {
+  return busyAction === action;
+}
   useEffect(() => {
     init();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -440,40 +444,46 @@ function getMimeTypeFromPath(path: string | null | undefined) {
   }
 
   async function createSpace() {
-    try {
-      setMsg('');
-      const { data, error } = await supabase.rpc('create_couple_space');
-      if (error) throw error;
+  try {
+    setBusyAction('createSpace');
+    setMsg('');
+    const { data, error } = await supabase.rpc('create_couple_space');
+    if (error) throw error;
 
-      const row = data?.[0];
-      setSavedInviteCode(row?.invite_code ?? '');
-      setCoupleId(row?.couple_id ?? null);
-      setRefreshKey((x) => x + 1);
-    } catch (error: any) {
-      setMsg(error.message || 'Could not create private space.');
-    }
+    const row = data?.[0];
+    setSavedInviteCode(row?.invite_code ?? '');
+    setCoupleId(row?.couple_id ?? null);
+    setRefreshKey((x) => x + 1);
+  } catch (error: any) {
+    setMsg(error.message || 'Could not create private space.');
+  } finally {
+    setBusyAction(null);
   }
+}
 
   async function joinSpace() {
-    try {
-      setMsg('');
-      if (!joinCode.trim()) {
-        setMsg('Enter an invite code.');
-        return;
-      }
-
-      const { data, error } = await supabase.rpc('join_couple_by_code', {
-        p_code: joinCode,
-      });
-
-      if (error) throw error;
-
-      setCoupleId(data ?? null);
-      setRefreshKey((x) => x + 1);
-    } catch (error: any) {
-      setMsg(error.message || 'Could not join private space.');
+  try {
+    setBusyAction('joinSpace');
+    setMsg('');
+    if (!joinCode.trim()) {
+      setMsg('Enter an invite code.');
+      return;
     }
+
+    const { data, error } = await supabase.rpc('join_couple_by_code', {
+      p_code: joinCode,
+    });
+
+    if (error) throw error;
+
+    setCoupleId(data ?? null);
+    setRefreshKey((x) => x + 1);
+  } catch (error: any) {
+    setMsg(error.message || 'Could not join private space.');
+  } finally {
+    setBusyAction(null);
   }
+}
 
   async function logout() {
     await supabase.auth.signOut();
@@ -481,45 +491,53 @@ function getMimeTypeFromPath(path: string | null | undefined) {
   }
 
   async function askQuestion() {
-    try {
-      if (!coupleId || !userId || !questionText.trim()) return;
+  try {
+    setBusyAction('askQuestion');
+    if (!coupleId || !userId || !questionText.trim()) return;
 
-      const { error } = await supabase.from('questions').insert({
-        couple_id: coupleId,
-        asked_by: userId,
-        question_text: questionText.trim(),
-      });
+    const { error } = await supabase.from('questions').insert({
+      couple_id: coupleId,
+      asked_by: userId,
+      question_text: questionText.trim(),
+    });
 
-      if (error) throw error;
+    if (error) throw error;
 
-      setQuestionText('');
-      setRefreshKey((x) => x + 1);
-    } catch (error: any) {
-      setMsg(error.message || 'Could not send question.');
-    }
+    setQuestionText('');
+    setMsg('Question sent.');
+    setRefreshKey((x) => x + 1);
+  } catch (error: any) {
+    setMsg(error.message || 'Could not send question.');
+  } finally {
+    setBusyAction(null);
   }
+}
 
   async function answerQuestionById(id: string) {
-    try {
-      const answer = (questionAnswer[id] || '').trim();
-      if (!answer) return;
+  try {
+    setBusyAction(`answer-${id}`);
+    const answer = (questionAnswer[id] || '').trim();
+    if (!answer) return;
 
-      const { error } = await supabase
-        .from('questions')
-        .update({
-          answer_text: answer,
-          answered_at: new Date().toISOString(),
-        })
-        .eq('id', id);
+    const { error } = await supabase
+      .from('questions')
+      .update({
+        answer_text: answer,
+        answered_at: new Date().toISOString(),
+      })
+      .eq('id', id);
 
-      if (error) throw error;
+    if (error) throw error;
 
-      setQuestionAnswer((prev) => ({ ...prev, [id]: '' }));
-      setRefreshKey((x) => x + 1);
-    } catch (error: any) {
-      setMsg(error.message || 'Could not send answer.');
-    }
+    setQuestionAnswer((prev) => ({ ...prev, [id]: '' }));
+    setMsg('Answer sent.');
+    setRefreshKey((x) => x + 1);
+  } catch (error: any) {
+    setMsg(error.message || 'Could not send answer.');
+  } finally {
+    setBusyAction(null);
   }
+}
 
   async function sendNudge(type: 'thinking' | 'heart' | 'kiss') {
     try {
@@ -558,114 +576,111 @@ function getMimeTypeFromPath(path: string | null | undefined) {
     }
   }
 
-  async function uploadMoment() {
-    try {
-      if (!coupleId || !userId || !momentFile) return;
-
-      const path = await uploadFile(momentFile, 'moments');
-
-      const { error } = await supabase.from('moments').insert({
-        couple_id: coupleId,
-        user_id: userId,
-        kind: momentKind,
-        caption: momentCaption.trim() || null,
-        storage_path: path,
-      });
-
-      if (error) throw error;
-
-      setMomentCaption('');
-      setMomentFile(null);
-      setMomentKind('day');
-      setRefreshKey((x) => x + 1);
-    } catch (error: any) {
-      setMsg(error.message || 'Could not upload photo.');
-    }
-  }
-
-  async function sendLetter() {
-    try {
-      if (!coupleId || !userId) return;
-
-      let storagePath: string | null = null;
-
-      if (letterKind !== 'text') {
-  if (!letterFile) {
-    setMsg(letterKind === 'audio' ? 'Record audio first.' : 'Choose a file first.');
-    return;
-  }
-
-  console.log('Selected file:', {
-    name: letterFile.name,
-    type: letterFile.type,
-    size: letterFile.size,
-  });
-
-  if (letterKind === 'audio') {
-    const allowedAudioExtensions = ['.mp3', '.m4a', '.wav', '.webm', '.ogg'];
-    const lowerName = letterFile.name.toLowerCase();
-    const isAllowed = allowedAudioExtensions.some((ext) => lowerName.endsWith(ext));
-
-    if (!isAllowed) {
-      setMsg('Please use a supported audio format: mp3, m4a, wav, webm, or ogg.');
+  async function uploadMoment(kindOverride?: 'day' | 'memory') {
+  try {
+    setBusyAction('uploadMoment');
+    if (!coupleId || !userId || !momentFile) {
+      setMsg('Choose a photo first.');
       return;
     }
-  }
 
-  storagePath = await uploadFile(letterFile, 'letters');
+    const path = await uploadFile(momentFile, 'moments');
+
+    const { error } = await supabase.from('moments').insert({
+      couple_id: coupleId,
+      user_id: userId,
+      kind: kindOverride ?? momentKind,
+      caption: momentCaption.trim() || null,
+      storage_path: path,
+    });
+
+    if (error) throw error;
+
+    setMomentCaption('');
+    setMomentFile(null);
+    setMomentKind('day');
+    setMsg('Photo uploaded.');
+    setRefreshKey((x) => x + 1);
+  } catch (error: any) {
+    setMsg(error.message || 'Could not upload photo.');
+  } finally {
+    setBusyAction(null);
+  }
 }
 
-      if (letterKind === 'text' && !letterText.trim()) {
-        setMsg('Enter a message.');
+  async function sendLetter() {
+  try {
+    setBusyAction('sendLetter');
+    if (!coupleId || !userId) return;
+
+    let storagePath: string | null = null;
+
+    if (letterKind !== 'text') {
+      if (!letterFile) {
+        setMsg(letterKind === 'audio' ? 'Record audio first.' : 'Choose a file first.');
         return;
       }
 
-      if (letterMode === 'capsule' && !unlockAt) {
-        setMsg('Choose an unlock time.');
-        return;
-      }
-
-      const { error } = await supabase.from('letters').insert({
-        couple_id: coupleId,
-        sender_id: userId,
-        mode: letterMode,
-        content_kind: letterKind,
-        text_content: letterKind === 'text' ? letterText.trim() : null,
-        storage_path: storagePath,
-        unlock_at: letterMode === 'capsule' ? new Date(unlockAt).toISOString() : null,
-      });
-
-      if (error) throw error;
-
-      setLetterText('');
-      setLetterFile(null);
-      setUnlockAt('');
-      setLetterMode('normal');
-      setLetterKind('text');
-      setRefreshKey((x) => x + 1);
-    } catch (error: any) {
-      setMsg(error.message || 'Could not send message.');
+      storagePath = await uploadFile(letterFile, 'letters');
     }
-  }
 
+    if (letterKind === 'text' && !letterText.trim()) {
+      setMsg('Enter a message.');
+      return;
+    }
+
+    if (letterMode === 'capsule' && !unlockAt) {
+      setMsg('Choose an unlock time.');
+      return;
+    }
+
+    const { error } = await supabase.from('letters').insert({
+      couple_id: coupleId,
+      sender_id: userId,
+      mode: letterMode,
+      content_kind: letterKind,
+      text_content: letterKind === 'text' ? letterText.trim() : null,
+      storage_path: storagePath,
+      unlock_at: letterMode === 'capsule' ? new Date(unlockAt).toISOString() : null,
+    });
+
+    if (error) throw error;
+
+    setLetterText('');
+    setUnlockAt('');
+    setLetterMode('normal');
+    setLetterKind('text');
+    clearRecordedAudio();
+    setMsg('Sent.');
+    setRefreshKey((x) => x + 1);
+  } catch (error: any) {
+    setMsg(error.message || 'Could not send message.');
+  } finally {
+    setBusyAction(null);
+  }
+}
   async function addBucketItem() {
-    try {
-      if (!coupleId || !userId || !bucketText.trim()) return;
+  try {
+    setBusyAction('addBucketItem');
+    if (!coupleId || !userId || !bucketText.trim()) return;
 
-      const { error } = await supabase.from('bucket_items').insert({
-        couple_id: coupleId,
-        created_by: userId,
-        title: bucketText.trim(),
-      });
+    const { error } = await supabase.from('bucket_items').insert({
+      couple_id: coupleId,
+      created_by: userId,
+      title: bucketText.trim(),
+    });
 
-      if (error) throw error;
+    if (error) throw error;
 
-      setBucketText('');
-      setRefreshKey((x) => x + 1);
-    } catch (error: any) {
-      setMsg(error.message || 'Could not add bucket list item.');
-    }
+    setBucketText('');
+    setMsg('Bucket list updated.');
+    setRefreshKey((x) => x + 1);
+  } catch (error: any) {
+    setMsg(error.message || 'Could not add bucket list item.');
+  } finally {
+    setBusyAction(null);
   }
+}
 
   async function toggleBucketItem(id: string, current: boolean) {
     try {
@@ -683,23 +698,27 @@ function getMimeTypeFromPath(path: string | null | undefined) {
   }
 
   async function addSentenceStarter() {
-    try {
-      if (!coupleId || !userId || !starterText.trim()) return;
+  try {
+    setBusyAction('addSentenceStarter');
+    if (!coupleId || !userId || !starterText.trim()) return;
 
-      const { error } = await supabase.from('sentence_games').insert({
-        couple_id: coupleId,
-        created_by: userId,
-        starter_text: starterText.trim(),
-      });
+    const { error } = await supabase.from('sentence_games').insert({
+      couple_id: coupleId,
+      created_by: userId,
+      starter_text: starterText.trim(),
+    });
 
-      if (error) throw error;
+    if (error) throw error;
 
-      setStarterText('');
-      setRefreshKey((x) => x + 1);
-    } catch (error: any) {
-      setMsg(error.message || 'Could not start sentence game.');
-    }
+    setStarterText('');
+    setMsg('Sentence starter sent.');
+    setRefreshKey((x) => x + 1);
+  } catch (error: any) {
+    setMsg(error.message || 'Could not start sentence game.');
+  } finally {
+    setBusyAction(null);
   }
+}
 
   async function finishSentenceById(id: string) {
     try {
@@ -809,9 +828,13 @@ function getMimeTypeFromPath(path: string | null | undefined) {
             <p className="text-sm text-zinc-300">
               Create a private space and send the invite code to your girlfriend.
             </p>
-            <button className="btn btn-pink w-full" onClick={createSpace}>
-              Create private space
-            </button>
+            <button
+  className="btn btn-pink w-full"
+  onClick={createSpace}
+  disabled={isBusy('createSpace')}
+>
+  {isBusy('createSpace') ? 'Creating...' : 'Create private space'}
+</button>
             {savedInviteCode ? (
               <p className="text-sm text-zinc-400">
                 Your invite code: <span className="font-bold text-white">{savedInviteCode}</span>
@@ -830,9 +853,13 @@ function getMimeTypeFromPath(path: string | null | undefined) {
               value={joinCode}
               onChange={(e) => setJoinCode(e.currentTarget.value)}
             />
-            <button className="btn btn-primary w-full" onClick={joinSpace}>
-              Join
-            </button>
+            <button
+  className="btn btn-primary w-full"
+  onClick={joinSpace}
+  disabled={isBusy('joinSpace')}
+>
+  {isBusy('joinSpace') ? 'Joining...' : 'Join'}
+</button>
           </div>
 
           {msg ? <p className="text-sm text-pink-400">{msg}</p> : null}
@@ -884,9 +911,13 @@ function getMimeTypeFromPath(path: string | null | undefined) {
                 value={questionText}
                 onChange={(e) => setQuestionText(e.currentTarget.value)}
               />
-              <button className="btn btn-primary w-full" onClick={askQuestion}>
-                Send question
-              </button>
+              <button
+  className="btn btn-primary w-full"
+  onClick={askQuestion}
+  disabled={isBusy('askQuestion')}
+>
+  {isBusy('askQuestion') ? 'Sending...' : 'Send question'}
+</button>
 
               <div className="space-y-3 pt-2">
                 {openQuestionsForMe.map((q) => (
@@ -906,11 +937,12 @@ function getMimeTypeFromPath(path: string | null | undefined) {
 }}
                     />
                     <button
-                      className="btn btn-pink mt-2 w-full"
-                      onClick={() => answerQuestionById(q.id)}
-                    >
-                      Send answer
-                    </button>
+  className="btn btn-pink mt-2 w-full"
+  onClick={() => answerQuestionById(q.id)}
+  disabled={isBusy(`answer-${q.id}`)}
+>
+  {isBusy(`answer-${q.id}`) ? 'Sending...' : 'Send answer'}
+</button>
                   </div>
                 ))}
                 {!openQuestionsForMe.length && (
@@ -979,14 +1011,12 @@ function getMimeTypeFromPath(path: string | null | undefined) {
   />
 
   <button
-    className="btn btn-pink w-full"
-    onClick={() => {
-      setMomentKind('day');
-      uploadMoment();
-    }}
-  >
-    Upload today's photo
-  </button>
+  className="btn btn-pink w-full"
+  onClick={() => uploadMoment('day')}
+  disabled={isBusy('uploadMoment')}
+>
+  {isBusy('uploadMoment') ? 'Uploading...' : "Upload today's photo"}
+</button>
 </div>
             </section>
 
@@ -1059,9 +1089,13 @@ function getMimeTypeFromPath(path: string | null | undefined) {
                 onChange={(e) => setMomentFile(e.currentTarget.files?.[0] ?? null)}
               />
 
-              <button className="btn btn-pink w-full" onClick={uploadMoment}>
-                Upload photo
-              </button>
+              <button
+  className="btn btn-pink w-full"
+  onClick={() => uploadMoment()}
+  disabled={isBusy('uploadMoment')}
+>
+  {isBusy('uploadMoment') ? 'Uploading...' : 'Upload photo'}
+</button>
             </section>
 
             <section className="card space-y-3">
@@ -1174,9 +1208,13 @@ function getMimeTypeFromPath(path: string | null | undefined) {
                 />
               ) : null}
 
-              <button className="btn btn-primary w-full" onClick={sendLetter}>
-                Send
-              </button>
+              <button
+  className="btn btn-primary w-full"
+  onClick={sendLetter}
+  disabled={isBusy('sendLetter')}
+>
+  {isBusy('sendLetter') ? 'Sending...' : 'Send'}
+</button>
             </section>
 
             <section className="card space-y-3">
@@ -1245,9 +1283,13 @@ function getMimeTypeFromPath(path: string | null | undefined) {
                 value={starterText}
                 onChange={(e) => setStarterText(e.currentTarget.value)}
               />
-              <button className="btn btn-pink w-full" onClick={addSentenceStarter}>
-                Send starter
-              </button>
+              <button
+  className="btn btn-pink w-full"
+  onClick={addSentenceStarter}
+  disabled={isBusy('addSentenceStarter')}
+>
+  {isBusy('addSentenceStarter') ? 'Sending...' : 'Send starter'}
+</button>
             </section>
 
             <section className="card space-y-3">
@@ -1302,9 +1344,13 @@ function getMimeTypeFromPath(path: string | null | undefined) {
               value={bucketText}
               onChange={(e) => setBucketText(e.currentTarget.value)}
             />
-            <button className="btn btn-primary w-full" onClick={addBucketItem}>
-              Add
-            </button>
+            <button
+  className="btn btn-primary w-full"
+  onClick={addBucketItem}
+  disabled={isBusy('addBucketItem')}
+>
+  {isBusy('addBucketItem') ? 'Adding...' : 'Add'}
+</button>
 
             <div className="space-y-2 pt-2">
               {bucketItems.map((item) => (

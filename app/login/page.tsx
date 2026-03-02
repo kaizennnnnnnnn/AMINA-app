@@ -112,7 +112,7 @@ export default function LoginPage() {
           />
 
           <button className="btn btn-pink w-full" onClick={handleSubmit} disabled={loading}>
-            {loading ? 'Sačekaj...' : mode === 'signup' ? 'Create account' : 'Login'}
+            {loading ? 'Please wait...' : mode === 'signup' ? 'Create account' : 'Login'}
           </button>
 
           {msg ? <p className="text-sm text-pink-400">{msg}</p> : null}
