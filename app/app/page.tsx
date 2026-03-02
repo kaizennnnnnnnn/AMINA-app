@@ -1346,33 +1346,43 @@ function getMimeTypeFromPath(path: string | null | undefined) {
       </div>
 
       <nav className="bottom-nav fixed bottom-0 left-0 right-0 px-3 py-3">
-        <div className="mx-auto grid max-w-md grid-cols-5 gap-2">
+        <div className="mx-auto grid max-w-md grid-cols-5 gap-1">
           <button
-            className={`btn ${tab === 'today' ? 'btn-primary' : 'btn-dark'}`}
+            className={`btn h-[52px] px-2 py-2 text-sm leading-none whitespace-nowrap flex items-center justify-center ${
+  tab === 'today' ? 'btn-primary' : 'btn-dark'
+}`}
             onClick={() => setTab('today')}
           >
             Today
           </button>
           <button
-            className={`btn ${tab === 'moments' ? 'btn-primary' : 'btn-dark'}`}
+            className={`btn h-[52px] px-2 py-2 text-sm leading-none whitespace-nowrap flex items-center justify-center ${
+  tab === 'moments' ? 'btn-primary' : 'btn-dark'
+}`}
             onClick={() => setTab('moments')}
           >
             Moments
           </button>
           <button
-            className={`btn ${tab === 'letters' ? 'btn-primary' : 'btn-dark'}`}
+            className={`btn h-[52px] px-2 py-2 text-sm leading-none whitespace-nowrap flex items-center justify-center ${
+  tab === 'letters' ? 'btn-primary' : 'btn-dark'
+}`}
             onClick={() => setTab('letters')}
           >
             Mail
           </button>
           <button
-            className={`btn ${tab === 'play' ? 'btn-primary' : 'btn-dark'}`}
+            className={`btn h-[52px] px-2 py-2 text-sm leading-none whitespace-nowrap flex items-center justify-center ${
+  tab === 'play' ? 'btn-primary' : 'btn-dark'
+}`}
             onClick={() => setTab('play')}
           >
             Play
           </button>
           <button
-            className={`btn ${tab === 'us' ? 'btn-primary' : 'btn-dark'}`}
+            className={`btn h-[52px] px-2 py-2 text-sm leading-none whitespace-nowrap flex items-center justify-center ${
+  tab === 'us' ? 'btn-primary' : 'btn-dark'
+}`}
             onClick={() => setTab('us')}
           >
             Us
