@@ -779,17 +779,22 @@ function getMimeTypeFromPath(path: string | null | undefined) {
   );
 
   if (loading) {
-    return (
-      <main className="min-h-screen bg-zinc-950 text-white px-4 py-6">
-        <div className="mx-auto max-w-md">Loading...</div>
-      </main>
-    );
-  }
+  return (
+    <main className="app-shell text-white px-4 py-6">
+      <div className="app-container">
+        <div className="card">
+          <p className="section-title">Loading...</p>
+          <p className="section-subtitle mt-2">Preparing your private space.</p>
+        </div>
+      </div>
+    </main>
+  );
+}
 
   if (!coupleId) {
     return (
-      <main className="min-h-screen bg-zinc-950 text-white px-4 py-6">
-        <div className="mx-auto max-w-md space-y-4">
+      <main className="app-shell text-white px-4 py-6">
+        <div className="app-container space-y-4">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-zinc-400">Welcome</p>
@@ -837,26 +842,29 @@ function getMimeTypeFromPath(path: string | null | undefined) {
   }
 
   return (
-    <main className="min-h-screen bg-zinc-950 text-white px-4 py-4 pb-24">
-      <div className="mx-auto max-w-md space-y-4">
-        <header className="flex items-center justify-between">
-          <div>
-            <p className="text-sm text-zinc-400">Private space</p>
-            <h1 className="text-2xl font-bold">Us</h1>
-            <p className="text-xs text-zinc-500">
-              Invite code: {savedInviteCode || '...'} · Members: {memberCount}/2
-            </p>
-          </div>
-          <button className="btn btn-dark" onClick={logout}>
-            Logout
-          </button>
-        </header>
+    <main className="app-shell text-white px-4 py-4 pb-24">
+      <div className="app-container space-y-4">
+        <header className="card">
+  <div className="flex items-start justify-between gap-3">
+    <div className="space-y-2">
+      <div className="header-chip">Private couple space</div>
+      <h1 className="app-title">Us</h1>
+      <p className="app-subtitle">
+        Invite code: {savedInviteCode || '...'} · Members: {memberCount}/2
+      </p>
+    </div>
+
+    <button className="btn btn-dark" onClick={logout}>
+      Logout
+    </button>
+  </div>
+</header>
 
         {tab === 'today' && (
           <>
             <section className="card space-y-3">
               <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold">Daily streak</h2>
+                <h2 className="section-title">Daily streak</h2>
                 <span className="text-xl font-bold">{streak} 🔥</span>
               </div>
               <p className="text-sm text-zinc-400">
@@ -868,7 +876,7 @@ function getMimeTypeFromPath(path: string | null | undefined) {
             </section>
 
             <section className="card space-y-3">
-              <h2 className="text-lg font-semibold">Random question</h2>
+              <h2 className="section-title">Random question</h2>
               <input
                 aria-label="Ask a random question"
                 className="input"
@@ -906,7 +914,7 @@ function getMimeTypeFromPath(path: string | null | undefined) {
                   </div>
                 ))}
                 {!openQuestionsForMe.length && (
-                  <p className="text-sm text-zinc-500">No unanswered questions for you right now.</p>
+                  <p className="empty-state">No unanswered questions for you right now.</p>
                 )}
               </div>
               
@@ -922,19 +930,19 @@ function getMimeTypeFromPath(path: string | null | undefined) {
       {q.answer_text ? (
         <p className="mt-2 text-sm text-pink-300">{q.answer_text}</p>
       ) : (
-        <p className="mt-2 text-xs text-zinc-500">Waiting for answer...</p>
+        <p className="empty-state">Waiting for answer...</p>
       )}
     </div>
   ))}
 
   {!questions.length && (
-    <p className="text-sm text-zinc-500">No questions yet.</p>
+    <p className="empty-state">No questions yet.</p>
   )}
 </div>
             </section>
 
             <section className="card space-y-3">
-              <h2 className="text-lg font-semibold">Tiny love note</h2>
+              <h2 className="section-title">Tiny love note</h2>
               <div className="grid grid-cols-3 gap-2">
                 <button className="btn btn-dark" onClick={() => sendNudge('thinking')}>
                   Thinking of you
@@ -950,7 +958,7 @@ function getMimeTypeFromPath(path: string | null | undefined) {
                 Total: {nudgeCount} · ❤️ {heartCount} · 😘 {kissCount} · 💭 {thinkingCount}
               </p>
               <div className="space-y-3 pt-2">
-  <h3 className="text-sm font-semibold text-zinc-300">
+  <h3 className="section-title">
     Upload today's photo
   </h3>
 
@@ -1021,7 +1029,7 @@ function getMimeTypeFromPath(path: string | null | undefined) {
         {tab === 'moments' && (
           <>
             <section className="card space-y-3">
-              <h2 className="text-lg font-semibold">Photo of the day / Memory</h2>
+              <h2 className="section-title">Photo of the day / Memory</h2>
 
               <select
                 aria-label="Choose photo category"
@@ -1082,7 +1090,7 @@ function getMimeTypeFromPath(path: string | null | undefined) {
         {tab === 'letters' && (
           <>
             <section className="card space-y-3">
-              <h2 className="text-lg font-semibold">Normal message / Time capsule</h2>
+              <h2 className="section-title">Normal message / Time capsule</h2>
 
               <select
                 aria-label="Choose message mode"
@@ -1151,7 +1159,7 @@ function getMimeTypeFromPath(path: string | null | undefined) {
         Your browser does not support audio playback.
       </audio>
     ) : (
-      <p className="text-xs text-zinc-500">No voice note recorded yet.</p>
+      <p className="empty-state">No voice note recorded yet.</p>
     )}
   </div>
 )}
@@ -1172,7 +1180,7 @@ function getMimeTypeFromPath(path: string | null | undefined) {
             </section>
 
             <section className="card space-y-3">
-              <h2 className="text-lg font-semibold">Inbox</h2>
+              <h2 className="section-title">Inbox</h2>
               <div className="space-y-3">
                 {visibleLetters.map((l) => (
                   <div key={l.id} className="rounded-2xl border border-zinc-800 p-3">
@@ -1229,7 +1237,7 @@ function getMimeTypeFromPath(path: string | null | undefined) {
         {tab === 'play' && (
           <>
             <section className="card space-y-3">
-              <h2 className="text-lg font-semibold">Finish my sentence</h2>
+              <h2 className="section-title">Finish my sentence</h2>
               <input
                 aria-label="Start a sentence game"
                 className="input"
@@ -1243,7 +1251,7 @@ function getMimeTypeFromPath(path: string | null | undefined) {
             </section>
 
             <section className="card space-y-3">
-              <h2 className="text-lg font-semibold">Open sentence games</h2>
+              <h2 className="section-title">Open sentence games</h2>
               <div className="space-y-3">
                 {sentenceGames.map((g) => (
                   <div key={g.id} className="rounded-2xl border border-zinc-800 p-3">
@@ -1285,7 +1293,7 @@ function getMimeTypeFromPath(path: string | null | undefined) {
 
         {tab === 'us' && (
           <section className="card space-y-3">
-            <h2 className="text-lg font-semibold">Bucket list</h2>
+            <h2 className="section-title">Bucket list</h2>
 
             <input
               aria-label="Add a bucket list item"
@@ -1315,10 +1323,29 @@ function getMimeTypeFromPath(path: string | null | undefined) {
           </section>
         )}
 
-        {msg ? <p className="text-sm text-pink-400">{msg}</p> : null}
+        {msg ? (
+  <div
+    className={`status-box ${
+      msg.toLowerCase().includes('could not') ||
+      msg.toLowerCase().includes('failed') ||
+      msg.toLowerCase().includes('not allowed') ||
+      msg.toLowerCase().includes('denied') ||
+      msg.toLowerCase().includes('error')
+        ? 'status-error'
+        : msg.toLowerCase().includes('sent') ||
+          msg.toLowerCase().includes('uploaded') ||
+          msg.toLowerCase().includes('recorded') ||
+          msg.toLowerCase().includes('granted')
+        ? 'status-success'
+        : 'status-info'
+    }`}
+  >
+    {msg}
+  </div>
+) : null}
       </div>
 
-      <nav className="fixed bottom-0 left-0 right-0 border-t border-zinc-800 bg-zinc-950/95 px-3 py-3 backdrop-blur">
+      <nav className="bottom-nav fixed bottom-0 left-0 right-0 px-3 py-3">
         <div className="mx-auto grid max-w-md grid-cols-5 gap-2">
           <button
             className={`btn ${tab === 'today' ? 'btn-primary' : 'btn-dark'}`}
