@@ -1361,7 +1361,7 @@ function getMimeTypeFromPath(path: string | null | undefined) {
 }`}
             onClick={() => setTab('moments')}
           >
-            Moments
+            Photos
           </button>
           <button
             className={`btn nav-btn ${
