@@ -826,7 +826,7 @@ function getMimeTypeFromPath(path: string | null | undefined) {
 
           <div className="card space-y-3">
             <p className="text-sm text-zinc-300">
-              Create a private space and send the invite code to your girlfriend.
+              Create a private space and send the invite code.
             </p>
             <button
   className="btn btn-pink w-full"
@@ -895,7 +895,7 @@ function getMimeTypeFromPath(path: string | null | undefined) {
                 <span className="text-xl font-bold">{streak} 🔥</span>
               </div>
               <p className="text-sm text-zinc-400">
-                This counts the days when you actively use the app.
+                Days spent here.
               </p>
               <button className="btn btn-dark w-full" onClick={enableNotifications}>
                 Enable notifications
