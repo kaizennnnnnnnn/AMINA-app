@@ -935,8 +935,8 @@ async function deleteLetter(letter: Letter) {
         <header className="card">
   <div className="flex items-start justify-between gap-3">
     <div className="space-y-2">
-      <div className="header-chip">Private couple space</div>
-      <h1 className="app-title">Us</h1>
+      <div className="header-chip">Place for us</div>
+      <h1 className="app-title">Asevin</h1>
       <p className="app-subtitle">
         Invite code: {savedInviteCode || '...'} · Members: {memberCount}/2
       </p>
@@ -1570,7 +1570,7 @@ async function deleteLetter(letter: Letter) {
 }`}
             onClick={() => setTab('us')}
           >
-            Us
+            Asevin
           </button>
         </div>
       </nav>

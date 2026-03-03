@@ -3,13 +3,13 @@ import './globals.css';
 import PwaInit from '@/components/pwa-init';
 
 export const metadata: Metadata = {
-  title: 'Us',
+  title: 'Asevin',
   description:
-    'A private couple app for notes, moments, voice messages, and playful connection.',
-  applicationName: 'Us',
+    'A private couple app ...',
+  applicationName: 'Asevin',
   appleWebApp: {
     capable: true,
-    title: 'Us',
+    title: 'Asevin',
     statusBarStyle: 'black-translucent',
   },
 };
