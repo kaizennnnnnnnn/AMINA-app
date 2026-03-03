@@ -67,7 +67,24 @@ type SentenceGame = {
 type AppOpen = {
   opened_on: string;
 };
+type AccentColor = 'pink' | 'purple' | 'red';
 
+type Profile = {
+  user_id: string;
+  display_name: string | null;
+  avatar_path: string | null;
+  updated_at: string;
+  avatar_url?: string | null;
+};
+
+type CoupleSettings = {
+  couple_id: string;
+  couple_nickname: string | null;
+  relationship_start_date: string | null;
+  accent_color: AccentColor;
+  updated_by: string | null;
+  updated_at: string;
+};
 export default function AppPage() {
   const router = useRouter();
 
@@ -118,7 +135,14 @@ export default function AppPage() {
 
   const [bucketText, setBucketText] = useState('');
   const [busyAction, setBusyAction] = useState<string | null>(null);
-
+  const [myProfile, setMyProfile] = useState<Profile | null>(null);
+const [partnerProfile, setPartnerProfile] = useState<Profile | null>(null);
+const [myName, setMyName] = useState('');
+const [coupleNickname, setCoupleNickname] = useState('');
+const [relationshipStartDate, setRelationshipStartDate] = useState('');
+const [accentColor, setAccentColor] = useState<AccentColor>('pink');
+const [avatarFile, setAvatarFile] = useState<File | null>(null);
+const [avatarPreviewUrl, setAvatarPreviewUrl] = useState('');
 function isBusy(action: string) {
   return busyAction === action;
 }
@@ -126,7 +150,17 @@ function isBusy(action: string) {
     init();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [refreshKey]);
+  useEffect(() => {
+  if (!avatarFile) {
+    setAvatarPreviewUrl('');
+    return;
+  }
 
+  const localUrl = URL.createObjectURL(avatarFile);
+  setAvatarPreviewUrl(localUrl);
+
+  return () => URL.revokeObjectURL(localUrl);
+}, [avatarFile]);
   async function init() {
     try {
       setLoading(true);
@@ -233,6 +267,38 @@ function isBusy(action: string) {
 
       setSavedInviteCode(coupleRes.data?.invite_code ?? '');
       setMemberCount(membersRes.data?.length ?? 1);
+      const memberIds = (membersRes.data ?? []).map((row) => row.user_id);
+
+let rawProfiles: Profile[] = [];
+if (memberIds.length) {
+  const { data: profileRows } = await supabase
+    .from('profiles')
+    .select('*')
+    .in('user_id', memberIds);
+
+  rawProfiles = (profileRows ?? []) as Profile[];
+}
+
+const { data: coupleSettingsRow } = await supabase
+  .from('couple_settings')
+  .select('*')
+  .eq('couple_id', existingCoupleId)
+  .maybeSingle();
+
+const profilesWithUrls = await attachProfileAvatarUrls(rawProfiles);
+
+const myProfileRow =
+  profilesWithUrls.find((profile) => profile.user_id === user.id) ?? null;
+
+const partnerProfileRow =
+  profilesWithUrls.find((profile) => profile.user_id !== user.id) ?? null;
+
+setMyProfile(myProfileRow);
+setPartnerProfile(partnerProfileRow);
+setMyName(myProfileRow?.display_name ?? '');
+setCoupleNickname(coupleSettingsRow?.couple_nickname ?? '');
+setRelationshipStartDate(coupleSettingsRow?.relationship_start_date ?? '');
+setAccentColor((coupleSettingsRow?.accent_color as AccentColor) ?? 'pink');
       setQuestions((questionsRes.data ?? []) as Question[]);
       setNudges((nudgesRes.data ?? []) as Nudge[]);
       setCustomPrompts((promptsRes.data ?? []) as CustomPrompt[]);
@@ -281,6 +347,55 @@ function isBusy(action: string) {
   }
 
   return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+}
+function getAccentButtonClass() {
+  if (accentColor === 'purple') {
+    return 'bg-gradient-to-r from-violet-500 to-fuchsia-600 text-white';
+  }
+
+  if (accentColor === 'red') {
+    return 'bg-gradient-to-r from-rose-500 to-red-600 text-white';
+  }
+
+  return 'btn-pink';
+}
+
+function getAccentChipClass() {
+  if (accentColor === 'purple') {
+    return 'bg-violet-500/10 text-violet-200 border border-violet-400/20';
+  }
+
+  if (accentColor === 'red') {
+    return 'bg-rose-500/10 text-rose-200 border border-rose-400/20';
+  }
+
+  return 'bg-pink-500/10 text-pink-200 border border-pink-400/20';
+}
+
+function getInitial(value: string | null | undefined, fallback: string) {
+  const source = (value || fallback).trim();
+  return source ? source.charAt(0).toUpperCase() : fallback;
+}
+
+async function attachProfileAvatarUrls(rows: Profile[]) {
+  const result = await Promise.all(
+    rows.map(async (row) => {
+      if (!row.avatar_path) {
+        return { ...row, avatar_url: null };
+      }
+
+      const { data } = await supabase.storage
+        .from('private-media')
+        .createSignedUrl(row.avatar_path, 60 * 60 * 24);
+
+      return {
+        ...row,
+        avatar_url: data?.signedUrl ?? null,
+      };
+    })
+  );
+
+  return result;
 }
 function getBestRecorderMimeType() {
   if (typeof MediaRecorder === 'undefined') return '';
@@ -693,6 +808,67 @@ async function deleteStoredFile(path: string | null | undefined) {
     setBusyAction(null);
   }
 }
+async function saveProfileSettings() {
+  try {
+    setBusyAction('saveSettings');
+
+    if (!userId || !coupleId) return;
+
+    let nextAvatarPath = myProfile?.avatar_path ?? null;
+
+    if (avatarFile) {
+      const uploadedPath = await uploadFile(avatarFile, 'profiles');
+
+      if (nextAvatarPath && nextAvatarPath !== uploadedPath) {
+        try {
+          await deleteStoredFile(nextAvatarPath);
+        } catch {
+          // ignore old avatar cleanup failure
+        }
+      }
+
+      nextAvatarPath = uploadedPath;
+    }
+
+    const { error: profileError } = await supabase.from('profiles').upsert(
+      {
+        user_id: userId,
+        display_name: myName.trim() || null,
+        avatar_path: nextAvatarPath,
+        updated_at: new Date().toISOString(),
+      },
+      {
+        onConflict: 'user_id',
+      }
+    );
+
+    if (profileError) throw profileError;
+
+    const { error: settingsError } = await supabase.from('couple_settings').upsert(
+      {
+        couple_id: coupleId,
+        couple_nickname: coupleNickname.trim() || null,
+        relationship_start_date: relationshipStartDate || null,
+        accent_color: accentColor,
+        updated_by: userId,
+        updated_at: new Date().toISOString(),
+      },
+      {
+        onConflict: 'couple_id',
+      }
+    );
+
+    if (settingsError) throw settingsError;
+
+    setAvatarFile(null);
+    setMsg('Profile settings saved.');
+    setRefreshKey((x) => x + 1);
+  } catch (error: any) {
+    setMsg(error.message || 'Could not save profile settings.');
+  } finally {
+    setBusyAction(null);
+  }
+}
 async function deleteLetter(letter: Letter) {
   try {
     setBusyAction(`delete-letter-${letter.id}`);
@@ -890,7 +1066,7 @@ async function deleteLetter(letter: Letter) {
               Create a private space and send the invite code.
             </p>
             <button
-  className="btn btn-pink w-full"
+  className={`btn ... ${getAccentButtonClass()}`}
   onClick={createSpace}
   disabled={isBusy('createSpace')}
 >
@@ -934,12 +1110,55 @@ async function deleteLetter(letter: Letter) {
       <div className="app-container space-y-4">
         <header className="card">
   <div className="flex items-start justify-between gap-3">
-    <div className="space-y-2">
-      <div className="header-chip">Place for us</div>
-      <h1 className="app-title">Asevin</h1>
-      <p className="app-subtitle">
-        Invite code: {savedInviteCode || '...'} · Members: {memberCount}/2
-      </p>
+    <div className="space-y-3">
+      <div className={`header-chip ${getAccentChipClass()}`}>
+        Private couple space
+      </div>
+
+      <div>
+        <h1 className="app-title">{coupleNickname.trim() || 'Us'}</h1>
+        <p className="app-subtitle">
+          Invite code: {savedInviteCode || '...'} · Members: {memberCount}/2
+        </p>
+      </div>
+
+      <div className="flex items-center gap-3">
+        <div className="flex -space-x-2">
+          <div className="h-10 w-10 overflow-hidden rounded-full border border-zinc-700 bg-zinc-900">
+            {avatarPreviewUrl || myProfile?.avatar_url ? (
+              <img
+                src={avatarPreviewUrl || myProfile?.avatar_url || ''}
+                alt="Your avatar"
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center text-sm font-semibold text-zinc-200">
+                {getInitial(myName || myProfile?.display_name, 'Y')}
+              </div>
+            )}
+          </div>
+
+          <div className="h-10 w-10 overflow-hidden rounded-full border border-zinc-700 bg-zinc-900">
+            {partnerProfile?.avatar_url ? (
+              <img
+                src={partnerProfile.avatar_url}
+                alt="Partner avatar"
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center text-sm font-semibold text-zinc-200">
+                {getInitial(partnerProfile?.display_name, 'P')}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <p className="text-xs text-zinc-400">
+          {relationshipStartDate
+            ? `Since ${new Date(`${relationshipStartDate}T00:00:00`).toLocaleDateString()}`
+            : 'Add your date in settings'}
+        </p>
+      </div>
     </div>
 
     <button className="btn btn-dark" onClick={logout}>
@@ -998,7 +1217,7 @@ async function deleteLetter(letter: Letter) {
 }}
                     />
                     <button
-  className="btn btn-pink mt-2 w-full"
+  className={`btn ... ${getAccentButtonClass()}`}
   onClick={() => answerQuestionById(q.id)}
   disabled={isBusy(`answer-${q.id}`)}
 >
@@ -1078,7 +1297,7 @@ async function deleteLetter(letter: Letter) {
   />
 
   <button
-  className="btn btn-pink w-full"
+  className={`btn ... ${getAccentButtonClass()}`}
   onClick={() => uploadMoment('day')}
   disabled={isBusy('uploadMoment')}
 >
@@ -1164,7 +1383,7 @@ async function deleteLetter(letter: Letter) {
               />
 
               <button
-  className="btn btn-pink w-full"
+  className={`btn ... ${getAccentButtonClass()}`}
   onClick={() => uploadMoment()}
   disabled={isBusy('uploadMoment')}
 >
@@ -1406,7 +1625,7 @@ async function deleteLetter(letter: Letter) {
                 onChange={(e) => setStarterText(e.currentTarget.value)}
               />
               <button
-  className="btn btn-pink w-full"
+  className={`btn ... ${getAccentButtonClass()}`}
   onClick={addSentenceStarter}
   disabled={isBusy('addSentenceStarter')}
 >
@@ -1466,6 +1685,7 @@ async function deleteLetter(letter: Letter) {
         )}
 
         {tab === 'us' && (
+        <>
           <section className="card space-y-3">
             <h2 className="section-title">Bucket list</h2>
 
@@ -1505,7 +1725,138 @@ async function deleteLetter(letter: Letter) {
     </div>
   )}
 </div>
+
           </section>
+          <section className="card space-y-4">
+  <div>
+    <h2 className="section-title">Profile & settings</h2>
+    <p className="section-subtitle mt-1">
+      Personalize your shared space.
+    </p>
+  </div>
+
+  <div className="flex items-center gap-3">
+    <div className="h-16 w-16 overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900">
+      {avatarPreviewUrl || myProfile?.avatar_url ? (
+        <img
+          src={avatarPreviewUrl || myProfile?.avatar_url || ''}
+          alt="Your avatar preview"
+          className="h-full w-full object-cover"
+        />
+      ) : (
+        <div className="flex h-full w-full items-center justify-center text-lg font-semibold text-zinc-200">
+          {getInitial(myName || myProfile?.display_name, 'Y')}
+        </div>
+      )}
+    </div>
+
+    <div className="flex-1 space-y-2">
+      <p className="text-sm text-zinc-300">Your in-app avatar</p>
+      <input
+        aria-label="Choose avatar image"
+        className="input"
+        type="file"
+        accept="image/*"
+        onChange={(e) => setAvatarFile(e.currentTarget.files?.[0] ?? null)}
+      />
+    </div>
+  </div>
+
+  <div className="space-y-2">
+    <label className="text-sm text-zinc-300">Your name</label>
+    <input
+      aria-label="Your name"
+      className="input"
+      placeholder="Enter your name"
+      value={myName}
+      onChange={(e) => setMyName(e.currentTarget.value)}
+    />
+  </div>
+
+  <div className="space-y-2">
+    <label className="text-sm text-zinc-300">Partner name</label>
+    <div className="input flex items-center text-zinc-300">
+      {partnerProfile?.display_name?.trim()
+        ? partnerProfile.display_name
+        : 'Your partner has not added their name yet.'}
+    </div>
+  </div>
+
+  <div className="soft-divider" />
+
+  <div className="space-y-2">
+    <label className="text-sm text-zinc-300">Couple nickname</label>
+    <input
+      aria-label="Couple nickname"
+      className="input"
+      placeholder="What should your shared space be called?"
+      value={coupleNickname}
+      onChange={(e) => setCoupleNickname(e.currentTarget.value)}
+    />
+  </div>
+
+  <div className="space-y-2">
+    <label className="text-sm text-zinc-300">Relationship start date</label>
+    <input
+      aria-label="Relationship start date"
+      className="input"
+      type="date"
+      value={relationshipStartDate}
+      onChange={(e) => setRelationshipStartDate(e.currentTarget.value)}
+    />
+  </div>
+
+  <div className="space-y-2">
+    <p className="text-sm text-zinc-300">App accent color</p>
+
+    <div className="grid grid-cols-3 gap-2">
+      <button
+        type="button"
+        className={`btn ${
+          accentColor === 'pink'
+            ? 'bg-pink-500 text-white border border-pink-300/30'
+            : 'btn-dark'
+        }`}
+        onClick={() => setAccentColor('pink')}
+      >
+        Pink
+      </button>
+
+      <button
+        type="button"
+        className={`btn ${
+          accentColor === 'purple'
+            ? 'bg-violet-500 text-white border border-violet-300/30'
+            : 'btn-dark'
+        }`}
+        onClick={() => setAccentColor('purple')}
+      >
+        Purple
+      </button>
+
+      <button
+        type="button"
+        className={`btn ${
+          accentColor === 'red'
+            ? 'bg-rose-500 text-white border border-rose-300/30'
+            : 'btn-dark'
+        }`}
+        onClick={() => setAccentColor('red')}
+      >
+        Red
+      </button>
+    </div>
+  </div>
+
+  <button
+    className={`btn w-full ${getAccentButtonClass()}`}
+    onClick={saveProfileSettings}
+    disabled={isBusy('saveSettings')}
+  >
+    {isBusy('saveSettings') ? 'Saving...' : 'Save settings'}
+  </button>
+</section>
+        </>
         )}
 
         {msg ? (
