@@ -1007,7 +1007,10 @@ async function deleteLetter(letter: Letter) {
                   </div>
                 ))}
                 {!openQuestionsForMe.length && (
-                  <p className="empty-state">No unanswered questions for you right now.</p>
+                  <div className="empty-state">
+  <span className="empty-state-title">No unanswered questions</span>
+  <span className="empty-state-text">You are all caught up for now.</span>
+</div>
                 )}
               </div>
               
@@ -1029,7 +1032,10 @@ async function deleteLetter(letter: Letter) {
   ))}
 
   {!questions.length && (
-    <p className="empty-state">No questions yet.</p>
+    <div className="empty-state">
+  <span className="empty-state-title">No questions yet</span>
+  <span className="empty-state-text">Ask the first random question.</span>
+</div>
   )}
 </div>
             </section>
@@ -1107,12 +1113,19 @@ async function deleteLetter(letter: Letter) {
               </button>
 
               <div className="space-y-2 pt-2">
-                {customPrompts.slice(0, 5).map((p) => (
-                  <div key={p.id} className="rounded-2xl border border-zinc-800 p-3 text-sm">
-                    {p.prompt_text}
-                  </div>
-                ))}
-              </div>
+  {customPrompts.length ? (
+    customPrompts.slice(0, 5).map((p) => (
+      <div key={p.id} className="rounded-2xl border border-zinc-800 p-3 text-sm">
+        {p.prompt_text}
+      </div>
+    ))
+  ) : (
+    <div className="empty-state">
+      <span className="empty-state-title">No saved prompts yet</span>
+      <span className="empty-state-text">Save a custom photo idea and it will appear here.</span>
+    </div>
+  )}
+</div>
             </section>
           </>
         )}
@@ -1161,41 +1174,48 @@ async function deleteLetter(letter: Letter) {
 
             <section className="card space-y-3">
               <h2 className="text-lg font-semibold">Polaroid wall</h2>
-              <div className="grid grid-cols-2 gap-3">
-                {moments.map((m) => (
-                  <div key={m.id} className="rounded-2xl border border-zinc-800 p-2">
-  <div className="media-frame">
-    {m.file_url ? (
-      <img
-        src={m.file_url}
-        alt="moment"
-        className="h-40 w-full object-cover"
-      />
-    ) : (
-      <div className="h-40 w-full bg-zinc-900" />
-    )}
+              {moments.length ? (
+  <div className="grid grid-cols-2 gap-3">
+    {moments.map((m) => (
+      <div key={m.id} className="rounded-2xl border border-zinc-800 p-2">
+        <div className="media-frame">
+          {m.file_url ? (
+            <img
+              src={m.file_url}
+              alt="moment"
+              className="h-40 w-full object-cover"
+            />
+          ) : (
+            <div className="h-40 w-full bg-zinc-900" />
+          )}
+        </div>
+
+        <div className="mt-2 space-y-2">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-xs text-zinc-400">{m.kind}</p>
+
+            {m.user_id === userId ? (
+              <button
+                className="btn btn-dark px-3 py-2 text-xs"
+                onClick={() => deleteMoment(m)}
+                disabled={isBusy(`delete-moment-${m.id}`)}
+              >
+                {isBusy(`delete-moment-${m.id}`) ? 'Deleting...' : 'Delete'}
+              </button>
+            ) : null}
+          </div>
+
+          {m.caption ? <p className="text-sm">{m.caption}</p> : null}
+        </div>
+      </div>
+    ))}
   </div>
-
-  <div className="mt-2 space-y-2">
-    <div className="flex items-center justify-between gap-2">
-      <p className="text-xs text-zinc-400">{m.kind}</p>
-
-      {m.user_id === userId ? (
-        <button
-          className="btn btn-dark btn-xs"
-          onClick={() => deleteMoment(m)}
-          disabled={isBusy(`delete-moment-${m.id}`)}
-        >
-          {isBusy(`delete-moment-${m.id}`) ? 'Deleting...' : 'Delete'}
-        </button>
-      ) : null}
-    </div>
-
-    {m.caption ? <p className="text-sm">{m.caption}</p> : null}
+) : (
+  <div className="empty-state">
+    <span className="empty-state-title">No memories yet</span>
+    <span className="empty-state-text">Upload your first photo to start our shared wall.</span>
   </div>
-</div>
-                ))}
-              </div>
+)}
             </section>
           </>
         )}
@@ -1272,7 +1292,10 @@ async function deleteLetter(letter: Letter) {
         Your browser does not support audio playback.
       </audio>
     ) : (
-      <p className="empty-state">No voice note recorded yet.</p>
+      <div className="empty-state">
+  <span className="empty-state-title">No voice note yet</span>
+  <span className="empty-state-text">Tap start recording to create one.</span>
+</div>
     )}
   </div>
 )}
@@ -1299,66 +1322,74 @@ async function deleteLetter(letter: Letter) {
             <section className="card space-y-3">
               <h2 className="section-title">Inbox</h2>
               <div className="space-y-3">
-                {visibleLetters.map((l) => (
-                  <div key={l.id} className="rounded-2xl border border-zinc-800 p-3">
-                    <div className="mb-2 flex items-center justify-between gap-2">
-    <p className="text-xs text-zinc-500">
-      {l.mode === 'capsule' ? 'Time capsule' : 'Normal'}
-    </p>
+  {visibleLetters.length ? (
+    visibleLetters.map((l) => (
+      <div key={l.id} className="rounded-2xl border border-zinc-800 p-3">
+        <div className="mb-2 flex items-center justify-between gap-2">
+          <p className="text-xs text-zinc-500">
+            {l.mode === 'capsule' ? 'Time capsule' : 'Normal'}
+          </p>
 
-    {l.sender_id === userId ? (
-      <button
-        className="btn btn-dark btn-xs"
-        onClick={() => deleteLetter(l)}
-        disabled={isBusy(`delete-letter-${l.id}`)}
-      >
-        {isBusy(`delete-letter-${l.id}`) ? 'Deleting...' : 'Delete'}
-      </button>
-    ) : null}
-                    </div>
+          {l.sender_id === userId ? (
+            <button
+              className="btn btn-dark px-3 py-2 text-xs"
+              onClick={() => deleteLetter(l)}
+              disabled={isBusy(`delete-letter-${l.id}`)}
+            >
+              {isBusy(`delete-letter-${l.id}`) ? 'Deleting...' : 'Delete'}
+            </button>
+          ) : null}
+        </div>
 
-                    {l.content_kind === 'text' && l.text_content ? (
-                      <p className="text-sm">{l.text_content}</p>
-                    ) : null}
+        {l.content_kind === 'text' && l.text_content ? (
+          <p className="text-sm">{l.text_content}</p>
+        ) : null}
 
-                    {l.content_kind === 'image' && l.file_url ? (
-                      <img
-                        src={l.file_url}
-                        alt="letter media"
-                        className="w-full rounded-xl object-cover"
-                      />
-                    ) : null}
+        {l.content_kind === 'image' && l.file_url ? (
+          <img
+            src={l.file_url}
+            alt="letter media"
+            className="w-full rounded-xl object-cover"
+          />
+        ) : null}
 
-                    {l.content_kind === 'audio' && l.file_url ? (
-  <div className="space-y-2">
-    <audio
-      key={l.file_url}
-      controls
-      preload="metadata"
-      className="w-full"
-      src={l.file_url}
-    >
-      Your browser does not support audio playback.
-    </audio>
+        {l.content_kind === 'audio' && l.file_url ? (
+          <div className="space-y-2">
+            <audio
+              key={l.file_url}
+              controls
+              preload="metadata"
+              className="w-full"
+              src={l.file_url}
+            >
+              Your browser does not support audio playback.
+            </audio>
 
-    <a
-      href={l.file_url}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="text-xs text-pink-300 underline"
-    >
-      Open audio directly
-    </a>
-  </div>
-) : null}
-                    {l.mode === 'capsule' && l.unlock_at ? (
-                      <p className="mt-2 text-xs text-zinc-500">
-                        Unlocks: {new Date(l.unlock_at).toLocaleString()}
-                      </p>
-                    ) : null}
-                  </div>
-                ))}
-              </div>
+            <a
+              href={l.file_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-pink-300 underline"
+            >
+              Open audio directly
+            </a>
+          </div>
+        ) : null}
+
+        {l.mode === 'capsule' && l.unlock_at ? (
+          <p className="mt-2 text-xs text-zinc-500">
+            Unlocks: {new Date(l.unlock_at).toLocaleString()}
+          </p>
+        ) : null}
+      </div>
+    ))
+  ) : (
+    <div className="empty-state">
+      <span className="empty-state-title">Your inbox is empty</span>
+      <span className="empty-state-text">Send a message, photo, or voice note to see it here.</span>
+    </div>
+  )}
+</div>
             </section>
           </>
         )}
@@ -1386,40 +1417,50 @@ async function deleteLetter(letter: Letter) {
             <section className="card space-y-3">
               <h2 className="section-title">Open sentence games</h2>
               <div className="space-y-3">
-                {sentenceGames.map((g) => (
-                  <div key={g.id} className="rounded-2xl border border-zinc-800 p-3">
-                    <p className="text-sm">{g.starter_text}</p>
+  {sentenceGames.length ? (
+    sentenceGames.map((g) => (
+      <div key={g.id} className="rounded-2xl border border-zinc-800 p-3">
+        <p className="text-sm">{g.starter_text}</p>
 
-                    {g.finish_text ? (
-                      <p className="mt-2 text-sm text-pink-300">{g.finish_text}</p>
-                    ) : g.created_by !== userId ? (
-                      <>
-                        <input
-                          aria-label="Finish the sentence"
-                          className="input mt-2"
-                          placeholder="Finish the sentence..."
-                          value={finishText[g.id] || ''}
-                          onChange={(e) => {
-  const value = e.currentTarget.value;
-  setFinishText((prev) => ({
-    ...prev,
-    [g.id]: value,
-  }));
-}}
-                        />
-                        <button
-                          className="btn btn-primary mt-2 w-full"
-                          onClick={() => finishSentenceById(g.id)}
-                        >
-                          Finish sentence
-                        </button>
-                      </>
-                    ) : (
-                      <p className="mt-2 text-xs text-zinc-500">Waiting for a reply.</p>
-                    )}
-                  </div>
-                ))}
-              </div>
+        {g.finish_text ? (
+          <p className="mt-2 text-sm text-pink-300">{g.finish_text}</p>
+        ) : g.created_by !== userId ? (
+          <>
+            <input
+              aria-label="Finish the sentence"
+              className="input mt-2"
+              placeholder="Finish the sentence..."
+              value={finishText[g.id] || ''}
+              onChange={(e) => {
+                const value = e.currentTarget.value;
+                setFinishText((prev) => ({
+                  ...prev,
+                  [g.id]: value,
+                }));
+              }}
+            />
+            <button
+              className="btn btn-primary mt-2 w-full"
+              onClick={() => finishSentenceById(g.id)}
+            >
+              Finish sentence
+            </button>
+          </>
+        ) : (
+          <div className="empty-state mt-2">
+            <span className="empty-state-title">Waiting for a reply</span>
+            <span className="empty-state-text">Your partner is still working on this one.</span>
+          </div>
+        )}
+      </div>
+    ))
+  ) : (
+    <div className="empty-state">
+      <span className="empty-state-title">No sentence games yet</span>
+      <span className="empty-state-text">Send the first starter to begin.</span>
+    </div>
+  )}
+</div>
             </section>
           </>
         )}
@@ -1444,19 +1485,26 @@ async function deleteLetter(letter: Letter) {
 </button>
 
             <div className="space-y-2 pt-2">
-              {bucketItems.map((item) => (
-                <button
-                  key={item.id}
-                  className="flex w-full items-center justify-between rounded-2xl border border-zinc-800 p-3 text-left"
-                  onClick={() => toggleBucketItem(item.id, item.is_done)}
-                >
-                  <span className={item.is_done ? 'line-through text-zinc-500' : ''}>
-                    {item.title}
-                  </span>
-                  <span>{item.is_done ? '✅' : '⬜'}</span>
-                </button>
-              ))}
-            </div>
+  {bucketItems.length ? (
+    bucketItems.map((item) => (
+      <button
+        key={item.id}
+        className="flex w-full items-center justify-between rounded-2xl border border-zinc-800 p-3 text-left"
+        onClick={() => toggleBucketItem(item.id, item.is_done)}
+      >
+        <span className={item.is_done ? 'line-through text-zinc-500' : ''}>
+          {item.title}
+        </span>
+        <span>{item.is_done ? '✅' : '⬜'}</span>
+      </button>
+    ))
+  ) : (
+    <div className="empty-state">
+      <span className="empty-state-title">No bucket list items yet</span>
+      <span className="empty-state-text">Put something you want us to do.</span>
+    </div>
+  )}
+</div>
           </section>
         )}
 

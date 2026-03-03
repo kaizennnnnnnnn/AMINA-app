@@ -134,7 +134,18 @@ button {
   color: #a1a1aa;
   background: rgba(24, 24, 27, 0.4);
 }
+.empty-state-title {
+  display: block;
+  font-weight: 600;
+  color: #f4f4f5;
+  margin-bottom: 0.25rem;
+}
 
+.empty-state-text {
+  display: block;
+  font-size: 0.78rem;
+  color: #a1a1aa;
+}
 .status-box {
   border-radius: 1rem;
   padding: 0.85rem 1rem;
