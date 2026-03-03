@@ -442,7 +442,15 @@ function getMimeTypeFromPath(path: string | null | undefined) {
 
     return path;
   }
+async function deleteStoredFile(path: string | null | undefined) {
+  if (!path) return;
 
+  const { error } = await supabase.storage.from('private-media').remove([path]);
+
+  if (error) {
+    throw error;
+  }
+}
   async function createSpace() {
   try {
     setBusyAction('createSpace');
@@ -607,7 +615,33 @@ function getMimeTypeFromPath(path: string | null | undefined) {
     setBusyAction(null);
   }
 }
+  async function deleteMoment(moment: Moment) {
+  try {
+    setBusyAction(`delete-moment-${moment.id}`);
 
+    if (!userId) return;
+
+    if (moment.user_id !== userId) {
+      setMsg('You can only delete your own photos.');
+      return;
+    }
+
+    if (moment.storage_path) {
+      await deleteStoredFile(moment.storage_path);
+    }
+
+    const { error } = await supabase.from('moments').delete().eq('id', moment.id);
+
+    if (error) throw error;
+
+    setMsg('Photo deleted.');
+    setRefreshKey((x) => x + 1);
+  } catch (error: any) {
+    setMsg(error.message || 'Could not delete photo.');
+  } finally {
+    setBusyAction(null);
+  }
+}
   async function sendLetter() {
   try {
     setBusyAction('sendLetter');
@@ -655,6 +689,33 @@ function getMimeTypeFromPath(path: string | null | undefined) {
     setRefreshKey((x) => x + 1);
   } catch (error: any) {
     setMsg(error.message || 'Could not send message.');
+  } finally {
+    setBusyAction(null);
+  }
+}
+async function deleteLetter(letter: Letter) {
+  try {
+    setBusyAction(`delete-letter-${letter.id}`);
+
+    if (!userId) return;
+
+    if (letter.sender_id !== userId) {
+      setMsg('You can only delete your own messages.');
+      return;
+    }
+
+    if (letter.storage_path) {
+      await deleteStoredFile(letter.storage_path);
+    }
+
+    const { error } = await supabase.from('letters').delete().eq('id', letter.id);
+
+    if (error) throw error;
+
+    setMsg('Message deleted.');
+    setRefreshKey((x) => x + 1);
+  } catch (error: any) {
+    setMsg(error.message || 'Could not delete message.');
   } finally {
     setBusyAction(null);
   }
@@ -1103,18 +1164,36 @@ function getMimeTypeFromPath(path: string | null | undefined) {
               <div className="grid grid-cols-2 gap-3">
                 {moments.map((m) => (
                   <div key={m.id} className="rounded-2xl border border-zinc-800 p-2">
-                    {m.file_url ? (
-                      <img
-                        src={m.file_url}
-                        alt="moment"
-                        className="h-40 w-full rounded-xl object-cover"
-                      />
-                    ) : (
-                      <div className="h-40 w-full rounded-xl bg-zinc-900" />
-                    )}
-                    <p className="mt-2 text-xs text-zinc-400">{m.kind}</p>
-                    {m.caption ? <p className="text-sm">{m.caption}</p> : null}
-                  </div>
+  <div className="media-frame">
+    {m.file_url ? (
+      <img
+        src={m.file_url}
+        alt="moment"
+        className="h-40 w-full object-cover"
+      />
+    ) : (
+      <div className="h-40 w-full bg-zinc-900" />
+    )}
+  </div>
+
+  <div className="mt-2 space-y-2">
+    <div className="flex items-center justify-between gap-2">
+      <p className="text-xs text-zinc-400">{m.kind}</p>
+
+      {m.user_id === userId ? (
+        <button
+          className="btn btn-dark btn-xs"
+          onClick={() => deleteMoment(m)}
+          disabled={isBusy(`delete-moment-${m.id}`)}
+        >
+          {isBusy(`delete-moment-${m.id}`) ? 'Deleting...' : 'Delete'}
+        </button>
+      ) : null}
+    </div>
+
+    {m.caption ? <p className="text-sm">{m.caption}</p> : null}
+  </div>
+</div>
                 ))}
               </div>
             </section>
@@ -1222,9 +1301,21 @@ function getMimeTypeFromPath(path: string | null | undefined) {
               <div className="space-y-3">
                 {visibleLetters.map((l) => (
                   <div key={l.id} className="rounded-2xl border border-zinc-800 p-3">
-                    <p className="mb-2 text-xs text-zinc-500">
-                      {l.mode === 'capsule' ? 'Time capsule' : 'Normal'}
-                    </p>
+                    <div className="mb-2 flex items-center justify-between gap-2">
+    <p className="text-xs text-zinc-500">
+      {l.mode === 'capsule' ? 'Time capsule' : 'Normal'}
+    </p>
+
+    {l.sender_id === userId ? (
+      <button
+        className="btn btn-dark btn-xs"
+        onClick={() => deleteLetter(l)}
+        disabled={isBusy(`delete-letter-${l.id}`)}
+      >
+        {isBusy(`delete-letter-${l.id}`) ? 'Deleting...' : 'Delete'}
+      </button>
+    ) : null}
+                    </div>
 
                     {l.content_kind === 'text' && l.text_content ? (
                       <p className="text-sm">{l.text_content}</p>

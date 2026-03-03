@@ -207,3 +207,8 @@ button {
   align-items: center;
   justify-content: center;
 }
+.btn-xs {
+  padding: 0.45rem 0.7rem;
+  font-size: 0.75rem;
+  line-height: 1;
+}
