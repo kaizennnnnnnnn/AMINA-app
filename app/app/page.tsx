@@ -136,14 +136,15 @@ export default function AppPage() {
   const [bucketText, setBucketText] = useState('');
   const [busyAction, setBusyAction] = useState<string | null>(null);
   const [myProfile, setMyProfile] = useState<Profile | null>(null);
-const [partnerProfile, setPartnerProfile] = useState<Profile | null>(null);
-const [myName, setMyName] = useState('');
-const [coupleNickname, setCoupleNickname] = useState('');
-const [relationshipStartDate, setRelationshipStartDate] = useState('');
-const [accentColor, setAccentColor] = useState<AccentColor>('pink');
-const [avatarFile, setAvatarFile] = useState<File | null>(null);
-const [avatarPreviewUrl, setAvatarPreviewUrl] = useState('');
-function isBusy(action: string) {
+  const [partnerProfile, setPartnerProfile] = useState<Profile | null>(null);
+  const [myName, setMyName] = useState('');
+  const [coupleNickname, setCoupleNickname] = useState('');
+  const [relationshipStartDate, setRelationshipStartDate] = useState('');
+  const [accentColor, setAccentColor] = useState<AccentColor>('pink');
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreviewUrl, setAvatarPreviewUrl] = useState('');
+  const [pushEnabled, setPushEnabled] = useState(false);
+  function isBusy(action: string) {
   return busyAction === action;
 }
   useEffect(() => {
@@ -397,6 +398,105 @@ async function attachProfileAvatarUrls(rows: Profile[]) {
 
   return result;
 }
+function urlBase64ToUint8Array(base64String: string) {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+
+  return outputArray;
+}
+
+async function getAccessToken() {
+  const { data } = await supabase.auth.getSession();
+  return data.session?.access_token ?? null;
+}
+
+async function enablePushNotifications() {
+  try {
+    setBusyAction('enablePush');
+
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+      setMsg('Push notifications are not supported on this device.');
+      return;
+    }
+
+    const permission = await Notification.requestPermission();
+
+    if (permission !== 'granted') {
+      setMsg('Notification permission was not granted.');
+      return;
+    }
+
+    const registration = await navigator.serviceWorker.register('/sw.js');
+    let subscription = await registration.pushManager.getSubscription();
+
+    if (!subscription) {
+      subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(
+          process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!
+        ),
+      });
+    }
+
+    const token = await getAccessToken();
+
+    if (!token) {
+      setMsg('Please log in again.');
+      return;
+    }
+
+    const response = await fetch('/api/push/subscribe', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(subscription),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.error || 'Could not enable push notifications.');
+    }
+
+    setPushEnabled(true);
+    setMsg('Push notifications enabled.');
+  } catch (error: any) {
+    setMsg(error.message || 'Could not enable push notifications.');
+  } finally {
+    setBusyAction(null);
+  }
+}
+
+async function sendPushEvent(payload: {
+  coupleId: string;
+  title: string;
+  body: string;
+  url?: string;
+}) {
+  try {
+    const token = await getAccessToken();
+    if (!token) return;
+
+    await fetch('/api/push/send', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    });
+  } catch {
+    // silent fail so the main action still succeeds
+  }
+}
 function getBestRecorderMimeType() {
   if (typeof MediaRecorder === 'undefined') return '';
 
@@ -625,7 +725,12 @@ async function deleteStoredFile(path: string | null | undefined) {
     });
 
     if (error) throw error;
-
+    await sendPushEvent({
+  coupleId,
+  title: 'New question',
+  body: 'You got a new random question.',
+  url: '/app',
+});
     setQuestionText('');
     setMsg('Question sent.');
     setRefreshKey((x) => x + 1);
@@ -640,6 +745,7 @@ async function deleteStoredFile(path: string | null | undefined) {
   try {
     setBusyAction(`answer-${id}`);
     const answer = (questionAnswer[id] || '').trim();
+    
     if (!answer) return;
 
     const { error } = await supabase
@@ -651,7 +757,14 @@ async function deleteStoredFile(path: string | null | undefined) {
       .eq('id', id);
 
     if (error) throw error;
-
+    if (coupleId) {
+  await sendPushEvent({
+    coupleId,
+    title: 'Question answered',
+    body: 'Your question got a reply.',
+    url: '/app',
+  });
+}
     setQuestionAnswer((prev) => ({ ...prev, [id]: '' }));
     setMsg('Answer sent.');
     setRefreshKey((x) => x + 1);
@@ -794,7 +907,19 @@ async function deleteStoredFile(path: string | null | undefined) {
     });
 
     if (error) throw error;
+    const pushBody =
+  letterKind === 'audio'
+    ? 'You got a new voice note.'
+    : letterKind === 'image'
+    ? 'You got a new photo message.'
+    : 'You got a new message.';
 
+await sendPushEvent({
+  coupleId,
+  title: 'New message',
+  body: pushBody,
+  url: '/app',
+});
     setLetterText('');
     setUnlockAt('');
     setLetterMode('normal');
@@ -1177,9 +1302,17 @@ async function deleteLetter(letter: Letter) {
               <p className="text-sm text-zinc-400">
                 Days spent here.
               </p>
-              <button className="btn btn-dark w-full" onClick={enableNotifications}>
-                Enable notifications
-              </button>
+              <button
+  className="btn btn-dark w-full"
+  onClick={enablePushNotifications}
+  disabled={isBusy('enablePush') || pushEnabled}
+>
+  {pushEnabled
+    ? 'Notifications enabled'
+    : isBusy('enablePush')
+    ? 'Enabling...'
+    : 'Enable notifications'}
+</button>
             </section>
 
             <section className="card space-y-3">
