@@ -789,7 +789,7 @@ async function deleteStoredFile(path: string | null | undefined) {
       if (error) throw error;
       const map: Record<string, string> = {
   thinking: 'Thinking of you 💭',
-  heart: 'A heart for you ❤️',
+  heart: 'I lovee youu ❤️',
   kiss: 'Kiss sent 😘',
 };
 
