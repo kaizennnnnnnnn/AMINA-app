@@ -3,9 +3,10 @@ import { getServerSupabase } from '@/lib/server-supabase';
 
 export async function GET(
   req: Request,
-  context: { params: { userId: string } }
+  { params }: { params: Promise<{ userId: string }> }
 ) {
-  const userId = context.params.userId;
+  const { userId } = await params;
+
   const supabase = getServerSupabase();
 
   const { data: profile } = await supabase
