@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/time-capsules?key=${CRON_SECRET}",
+      "schedule": "*/5 * * * *"
+    }
+  ]
+}

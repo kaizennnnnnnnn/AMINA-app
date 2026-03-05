@@ -29,7 +29,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { coupleId, title, body, url } = await request.json();
+    const { coupleId, title, body, url, senderId } = await request.json();
 
     if (!coupleId || !title || !body) {
       return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
@@ -72,17 +72,15 @@ export async function POST(request: Request) {
     if (subError) {
       return NextResponse.json({ error: subError.message }, { status: 500 });
     }
-
+    const origin = new URL(request.url).origin;
+    const iconUrl = senderId ? `${origin}/api/push/avatar/${senderId}` : `${origin}/icon`;
     const payload = JSON.stringify({
-      title,
-      body,
-      icon: '/icon',
-      badge: '/icon',
-      data: {
-        url: url || '/app',
-      },
-    });
-
+  title,
+  body,
+  icon: iconUrl,
+  badge: `${origin}/icon`,
+  data: { url: url || '/app' },
+});
     let sent = 0;
 
     for (const sub of subscriptions ?? []) {

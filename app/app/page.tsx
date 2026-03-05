@@ -480,6 +480,7 @@ async function sendPushEvent(payload: {
   title: string;
   body: string;
   url?: string;
+  senderId?: string;
 }) {
   try {
     const token = await getAccessToken();
@@ -786,7 +787,19 @@ async function deleteStoredFile(path: string | null | undefined) {
       });
 
       if (error) throw error;
+      const map: Record<string, string> = {
+  thinking: 'Thinking of you 💭',
+  heart: 'A heart for you ❤️',
+  kiss: 'Kiss sent 😘',
+};
 
+await sendPushEvent({
+  coupleId,
+  senderId: userId,
+  title: 'Tiny love note',
+  body: map[type] || 'You got a love note 💕',
+  url: '/app',
+});
       setRefreshKey((x) => x + 1);
     } catch (error: any) {
       setMsg(error.message || 'Could not send nudge.');
@@ -831,7 +844,13 @@ async function deleteStoredFile(path: string | null | undefined) {
     });
 
     if (error) throw error;
-
+    await sendPushEvent({
+  coupleId,
+  senderId: userId,
+  title: 'New photo',
+  body: (kindOverride ?? momentKind) === 'day' ? 'Photo of the day 📸' : 'New memory added 📌',
+  url: '/app',
+});
     setMomentCaption('');
     setMomentFile(null);
     setMomentKind('day');
@@ -861,7 +880,7 @@ async function deleteStoredFile(path: string | null | undefined) {
     const { error } = await supabase.from('moments').delete().eq('id', moment.id);
 
     if (error) throw error;
-
+    
     setMsg('Photo deleted.');
     setRefreshKey((x) => x + 1);
   } catch (error: any) {
@@ -1033,7 +1052,13 @@ async function deleteLetter(letter: Letter) {
     });
 
     if (error) throw error;
-
+    await sendPushEvent({
+  coupleId,
+  senderId: userId,
+  title: 'Bucket list',
+  body: `New idea: "${bucketText.trim()}"`,
+  url: '/app',
+});
     setBucketText('');
     setMsg('Bucket list updated.');
     setRefreshKey((x) => x + 1);
@@ -1052,7 +1077,15 @@ async function deleteLetter(letter: Letter) {
         .eq('id', id);
 
       if (error) throw error;
-
+      if (coupleId && userId) {
+  await sendPushEvent({
+    coupleId,
+    senderId: userId,
+    title: 'Bucket list updated',
+    body: current ? 'Marked as not done ⬜' : 'Marked as done ✅',
+    url: '/app',
+  });
+}
       setRefreshKey((x) => x + 1);
     } catch (error: any) {
       setMsg(error.message || 'Could not update bucket list item.');
@@ -1680,6 +1713,11 @@ async function deleteLetter(letter: Letter) {
         <div className="mb-2 flex items-center justify-between gap-2">
           <p className="text-xs text-zinc-500">
             {l.mode === 'capsule' ? 'Time capsule' : 'Normal'}
+            {l.created_at ? (
+  <p className="text-xs text-zinc-500">
+    Sent: {new Date(l.created_at).toLocaleString()}
+  </p>
+) : null}
           </p>
 
           {l.sender_id === userId ? (
@@ -2039,15 +2077,19 @@ async function deleteLetter(letter: Letter) {
             onClick={() => setTab('letters')}
           >
             Mail
+            
           </button>
           <button
             className={`btn nav-btn ${
   tab === 'play' ? 'btn-primary' : 'btn-dark'
 }`}
             onClick={() => setTab('play')}
+            
           >
             Play
+            
           </button>
+          
           <button
             className={`btn nav-btn ${
   tab === 'us' ? 'btn-primary' : 'btn-dark'
