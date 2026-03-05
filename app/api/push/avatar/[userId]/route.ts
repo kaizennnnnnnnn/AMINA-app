@@ -3,9 +3,9 @@ import { getServerSupabase } from '@/lib/server-supabase';
 
 export async function GET(
   req: Request,
-  { params }: { params: { userId: string } }
+  context: { params: { userId: string } }
 ) {
-  const userId = params.userId;
+  const userId = context.params.userId;
   const supabase = getServerSupabase();
 
   const { data: profile } = await supabase
@@ -14,12 +14,11 @@ export async function GET(
     .eq('user_id', userId)
     .maybeSingle();
 
-  // If user has no avatar, fallback to app icon
+  // No avatar -> use app icon
   if (!profile?.avatar_path) {
     return NextResponse.redirect(new URL('/icon', req.url));
   }
 
-  // Make a signed URL (valid 24h), then proxy bytes
   const { data: signed, error } = await supabase.storage
     .from('private-media')
     .createSignedUrl(profile.avatar_path, 60 * 60 * 24);
