@@ -144,6 +144,13 @@ export default function AppPage() {
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreviewUrl, setAvatarPreviewUrl] = useState('');
   const [pushEnabled, setPushEnabled] = useState(false);
+  const [secretClickCount, setSecretClickCount] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return parseInt(localStorage.getItem('secretClickCount') || '0', 10);
+    }
+    return 0;
+  });
+  const [secretClicking, setSecretClicking] = useState(false);
   function isBusy(action: string) {
   return busyAction === action;
 }
@@ -714,6 +721,19 @@ async function deleteStoredFile(path: string | null | undefined) {
     router.replace('/login');
   }
 
+  function playSecretVoice() {
+    setSecretClickCount((c) => {
+      const next = c + 1;
+      localStorage.setItem('secretClickCount', String(next));
+      return next;
+    });
+    setSecretClicking(true);
+    setTimeout(() => setSecretClicking(false), 150);
+    const idx = Math.floor(Math.random() * 5) + 1;
+    const audio = new Audio(`/voice/v${idx}.mp3`);
+    audio.play();
+  }
+
   async function askQuestion() {
   try {
     setBusyAction('askQuestion');
@@ -1031,7 +1051,7 @@ async function deleteLetter(letter: Letter) {
     const { error } = await supabase.from('letters').delete().eq('id', letter.id);
 
     if (error) throw error;
-
+    
     setMsg('Message deleted.');
     setRefreshKey((x) => x + 1);
   } catch (error: any) {
@@ -1319,9 +1339,23 @@ async function deleteLetter(letter: Letter) {
       </div>
     </div>
 
-    <button className="btn btn-dark" onClick={logout}>
-      Logout
-    </button>
+    <div className="flex flex-col items-center gap-1">
+      <button type="button" className="btn btn-dark" onClick={logout}>
+        Logout
+      </button>
+      <button
+        type="button"
+        onClick={playSecretVoice}
+        className={`mt-[2px] bg-transparent border-0 p-0 cursor-pointer transition-transform duration-150 ${secretClicking ? 'scale-90' : 'scale-100'}`}
+      >
+        <img
+          src="/secret-button.png"
+          alt="secret"
+          className="h-10 w-10 rounded-full object-cover"
+        />
+      </button>
+      <p className="text-xs text-zinc-500">{secretClickCount}</p>
+    </div>
   </div>
 </header>
 
