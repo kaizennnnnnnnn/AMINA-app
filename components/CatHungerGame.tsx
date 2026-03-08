@@ -335,7 +335,7 @@ export default function CatHungerGame({
                 />
               </div>
             </button>
-            <span className="text-xs text-zinc-500">Fish</span>
+            <span className="text-xs text-zinc-500">Sardine</span>
           </div>
         </div>
 
