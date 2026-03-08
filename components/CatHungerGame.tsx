@@ -290,7 +290,7 @@ export default function CatHungerGame({
       {/* Food */}
       <div className="space-y-2">
         <p className="text-xs text-zinc-500 text-center">
-          Drag food onto the cat, or tap to feed.
+          Drag or tap to feed him.
         </p>
 
         <div className="flex items-center justify-center gap-6">
