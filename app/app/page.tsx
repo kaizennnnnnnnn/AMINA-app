@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { DEFAULT_PHOTO_PROMPTS } from '@/lib/default-prompts';
-
+import CatHungerGame from "@/components/CatHungerGame";
 type Question = {
   id: string;
   asked_by: string;
@@ -95,7 +95,7 @@ export default function AppPage() {
   const [coupleId, setCoupleId] = useState<string | null>(null);
   const [savedInviteCode, setSavedInviteCode] = useState('');
   const [joinCode, setJoinCode] = useState('');
-  const [tab, setTab] = useState<'today' | 'moments' | 'letters' | 'play' | 'us'>('today');
+  const [tab, setTab] = useState<'today' | 'moments' | 'letters' | 'play' | 'cat' | 'us'>('today');
   const [msg, setMsg] = useState('');
 
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -1889,6 +1889,15 @@ async function deleteLetter(letter: Letter) {
           </>
         )}
 
+        {tab === 'cat' && (
+          <CatHungerGame
+            coupleId={coupleId}
+            userId={userId}
+            myName={myName || myProfile?.display_name || undefined}
+            partnerName={partnerProfile?.display_name || undefined}
+          />
+        )}
+
         {tab === 'us' && (
         <>
           <section className="card space-y-3">
@@ -2087,47 +2096,39 @@ async function deleteLetter(letter: Letter) {
       </div>
 
       <nav className="bottom-nav fixed bottom-0 left-0 right-0 px-3 py-3">
-        <div className="mx-auto grid max-w-md grid-cols-5 gap-1">
+        <div className="mx-auto grid max-w-md grid-cols-6 gap-1">
           <button
-            className={`btn nav-btn ${
-  tab === 'today' ? 'btn-primary' : 'btn-dark'
-}`}
+            className={`btn nav-btn ${tab === 'today' ? 'btn-primary' : 'btn-dark'}`}
             onClick={() => setTab('today')}
           >
             Today
           </button>
           <button
-            className={`btn nav-btn ${
-  tab === 'moments' ? 'btn-primary' : 'btn-dark'
-}`}
+            className={`btn nav-btn ${tab === 'moments' ? 'btn-primary' : 'btn-dark'}`}
             onClick={() => setTab('moments')}
           >
             Photos
           </button>
           <button
-            className={`btn nav-btn ${
-  tab === 'letters' ? 'btn-primary' : 'btn-dark'
-}`}
+            className={`btn nav-btn ${tab === 'letters' ? 'btn-primary' : 'btn-dark'}`}
             onClick={() => setTab('letters')}
           >
             Mail
-            
           </button>
           <button
-            className={`btn nav-btn ${
-  tab === 'play' ? 'btn-primary' : 'btn-dark'
-}`}
+            className={`btn nav-btn ${tab === 'play' ? 'btn-primary' : 'btn-dark'}`}
             onClick={() => setTab('play')}
-            
           >
             Play
-            
           </button>
-          
           <button
-            className={`btn nav-btn ${
-  tab === 'us' ? 'btn-primary' : 'btn-dark'
-}`}
+            className={`btn nav-btn ${tab === 'cat' ? 'btn-primary' : 'btn-dark'}`}
+            onClick={() => setTab('cat')}
+          >
+            🐱
+          </button>
+          <button
+            className={`btn nav-btn ${tab === 'us' ? 'btn-primary' : 'btn-dark'}`}
             onClick={() => setTab('us')}
           >
             Asevin
