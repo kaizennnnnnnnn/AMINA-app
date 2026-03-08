@@ -138,7 +138,7 @@ export default function CatHungerGame({
     setRow(updated);
 
     if (prevNext && updated.next_hungry_at !== prevNext && updated.last_fed_by === userId) {
-      setMsg("You fed her first! +1");
+      setMsg("You fed him first! +1");
     } else if (updated.last_fed_by && updated.last_fed_by !== userId && isHungry) {
       setMsg("Too late — i fed him first.");
     } else if (!isHungry) {
