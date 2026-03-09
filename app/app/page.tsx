@@ -158,6 +158,15 @@ export default function AppPage() {
     return 0;
   });
   const [secretClicking, setSecretClicking] = useState(false);
+  const [navHearts, setNavHearts] = useState<{ id: number; forTab: string }[]>([]);
+
+  function handleNavClick(newTab: typeof tab) {
+    setTab(newTab);
+    const id = Date.now() + Math.random();
+    setNavHearts(prev => [...prev, { id, forTab: newTab }]);
+    setTimeout(() => setNavHearts(prev => prev.filter(h => h.id !== id)), 1000);
+  }
+
   function isBusy(action: string) {
   return busyAction === action;
 }
@@ -1372,6 +1381,7 @@ async function deleteLetter(letter: Letter) {
   </div>
 </header>
 
+        <div key={tab} className="tab-page space-y-4">
         {tab === 'today' && (
           <>
             <section className="card space-y-3">
@@ -2112,6 +2122,8 @@ async function deleteLetter(letter: Letter) {
         </>
         )}
 
+        </div>
+
         {msg ? (
   <div
     className={`status-box ${
@@ -2136,42 +2148,32 @@ async function deleteLetter(letter: Letter) {
 
       <nav className="bottom-nav fixed bottom-0 left-0 right-0 px-3 py-3">
         <div className="mx-auto grid max-w-md grid-cols-6 gap-1">
-          <button
-            className={`btn nav-btn ${tab === 'today' ? 'btn-primary' : 'btn-dark'}`}
-            onClick={() => setTab('today')}
-          >
-            Today
-          </button>
-          <button
-            className={`btn nav-btn ${tab === 'moments' ? 'btn-primary' : 'btn-dark'}`}
-            onClick={() => setTab('moments')}
-          >
-            Photos
-          </button>
-          <button
-            className={`btn nav-btn ${tab === 'letters' ? 'btn-primary' : 'btn-dark'}`}
-            onClick={() => setTab('letters')}
-          >
-            Mail
-          </button>
-          <button
-            className={`btn nav-btn ${tab === 'play' ? 'btn-primary' : 'btn-dark'}`}
-            onClick={() => setTab('play')}
-          >
-            Play
-          </button>
-          <button
-            className={`btn nav-btn ${tab === 'cat' ? 'btn-primary' : 'btn-dark'}`}
-            onClick={() => setTab('cat')}
-          >
-            🐱
-          </button>
-          <button
-            className={`btn nav-btn ${tab === 'us' ? 'btn-primary' : 'btn-dark'}`}
-            onClick={() => setTab('us')}
-          >
-            Asevin
-          </button>
+          {(
+            [
+              { id: 'today',   label: 'Today'  },
+              { id: 'moments', label: 'Photos' },
+              { id: 'letters', label: 'Mail'   },
+              { id: 'play',    label: 'Play'   },
+              { id: 'cat',     label: '🐱'     },
+              { id: 'us',      label: 'Asevin' },
+            ] as const
+          ).map(({ id: navId, label }) => (
+            <button
+              key={navId}
+              type="button"
+              className={`btn nav-btn relative overflow-visible ${tab === navId ? 'btn-primary' : 'btn-dark'}`}
+              onClick={() => handleNavClick(navId)}
+            >
+              {label}
+              {navHearts.filter(h => h.forTab === navId).map(h => (
+                <div key={h.id} className="nav-heart-burst-inner">
+                  {(['❤️','💕','🩷','💗','💖','✨','💝'] as const).map((emoji, i) => (
+                    <span key={i} className="nav-heart">{emoji}</span>
+                  ))}
+                </div>
+              ))}
+            </button>
+          ))}
         </div>
       </nav>
     </main>

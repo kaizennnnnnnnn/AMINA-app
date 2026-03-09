@@ -345,6 +345,54 @@ input, textarea, select, button { outline: none; }
   justify-content: center;
 }
 
+/* ── Tab page transition ─────────────────────────────────────── */
+.tab-page {
+  animation: tab-enter 0.24s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes tab-enter {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Nav heart burst ─────────────────────────────────────────── */
+.nav-heart-burst-inner {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 100;
+}
+
+.nav-heart {
+  position: absolute;
+  top: 0;
+  left: 0;
+  font-size: 1.2rem;
+  line-height: 1;
+  opacity: 0;
+  animation-duration: 0.85s;
+  animation-timing-function: ease-out;
+  animation-fill-mode: forwards;
+}
+
+.nav-heart:nth-child(1) { animation-name: hf-up;  animation-delay:   0ms; }
+.nav-heart:nth-child(2) { animation-name: hf-ul;  animation-delay:  35ms; }
+.nav-heart:nth-child(3) { animation-name: hf-ur;  animation-delay:  35ms; }
+.nav-heart:nth-child(4) { animation-name: hf-l;   animation-delay:  65ms; }
+.nav-heart:nth-child(5) { animation-name: hf-r;   animation-delay:  65ms; }
+.nav-heart:nth-child(6) { animation-name: hf-fl;  animation-delay:  95ms; }
+.nav-heart:nth-child(7) { animation-name: hf-fr;  animation-delay:  95ms; }
+
+@keyframes hf-up { 0%{opacity:1;transform:translate(  0px,  0px) scale(1.3)} 100%{opacity:0;transform:translate(  0px,-62px) scale(0.2)} }
+@keyframes hf-ul { 0%{opacity:1;transform:translate(  0px,  0px) scale(1.3)} 100%{opacity:0;transform:translate(-28px,-52px) scale(0.2)} }
+@keyframes hf-ur { 0%{opacity:1;transform:translate(  0px,  0px) scale(1.3)} 100%{opacity:0;transform:translate( 28px,-52px) scale(0.2)} }
+@keyframes hf-l  { 0%{opacity:1;transform:translate(  0px,  0px) scale(1.3)} 100%{opacity:0;transform:translate(-50px,-30px) scale(0.2)} }
+@keyframes hf-r  { 0%{opacity:1;transform:translate(  0px,  0px) scale(1.3)} 100%{opacity:0;transform:translate( 50px,-30px) scale(0.2)} }
+@keyframes hf-fl { 0%{opacity:1;transform:translate(  0px,  0px) scale(1.3)} 100%{opacity:0;transform:translate(-60px, -8px) scale(0.2)} }
+@keyframes hf-fr { 0%{opacity:1;transform:translate(  0px,  0px) scale(1.3)} 100%{opacity:0;transform:translate( 60px, -8px) scale(0.2)} }
+
 /* ── Misc ────────────────────────────────────────────────────── */
 .btn-xs {
   padding: 0.45rem 0.7rem;

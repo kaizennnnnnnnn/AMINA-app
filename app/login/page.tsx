@@ -29,7 +29,7 @@ export default function LoginPage() {
       setMsg('');
 
       if (!email || !password) {
-        setMsg('Unesi email i password.');
+        setMsg('Input email and password.');
         return;
       }
 
@@ -49,7 +49,7 @@ export default function LoginPage() {
         });
 
         if (loginError) {
-          setMsg('Nalog je kreiran. Ako si uključio email potvrdu, prvo potvrdi email.');
+          setMsg('The account has been created. If you enabled email verification, please verify your email first.');
           return;
         }
 
@@ -65,7 +65,7 @@ export default function LoginPage() {
         router.replace('/app');
       }
     } catch (error: any) {
-      setMsg(error.message || 'Greška.');
+      setMsg(error.message || 'Error.');
     } finally {
       setLoading(false);
     }
@@ -75,8 +75,8 @@ export default function LoginPage() {
     <main className="min-h-screen bg-zinc-950 text-white px-4 py-6">
       <div className="mx-auto max-w-md">
         <div className="mb-6">
-          <p className="text-sm text-zinc-400">Private couple app</p>
-          <h1 className="text-3xl font-bold">Us</h1>
+          <p className="text-sm text-zinc-400">Our app</p>
+          <h1 className="text-3xl font-bold">Asevin</h1>
         </div>
 
         <div className="card space-y-4">
