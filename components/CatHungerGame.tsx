@@ -39,6 +39,8 @@ export default function CatHungerGame({
 }) {
   const catRef = useRef<HTMLDivElement | null>(null);
   const ghostRef = useRef<HTMLDivElement | null>(null);
+  const hungerAudioRef = useRef<HTMLAudioElement | null>(null);
+  const hungerSoundIndexRef = useRef(0);
 
   const [row, setRow] = useState<CatGameRow | null>(null);
   const [now, setNow] = useState<number>(Date.now());
@@ -166,6 +168,39 @@ export default function CatHungerGame({
     setFrame(0);
     const t = setInterval(() => setFrame((f) => (f + 1) % 3), 1600);
     return () => clearInterval(t);
+  }, [isHungry]);
+
+  // cat hungry sound — alternates between two tracks while hungry
+  useEffect(() => {
+    if (!isHungry) {
+      if (hungerAudioRef.current) {
+        hungerAudioRef.current.pause();
+        hungerAudioRef.current = null;
+      }
+      return;
+    }
+
+    const sounds = ['/sounds/cat-hungry-1.mp3', '/sounds/cat-hungry-2.mp3'];
+    let stopped = false;
+
+    function playNext() {
+      if (stopped) return;
+      const audio = new Audio(sounds[hungerSoundIndexRef.current % 2]);
+      hungerAudioRef.current = audio;
+      hungerSoundIndexRef.current += 1;
+      audio.play().catch(() => {});
+      audio.addEventListener('ended', playNext, { once: true });
+    }
+
+    playNext();
+
+    return () => {
+      stopped = true;
+      if (hungerAudioRef.current) {
+        hungerAudioRef.current.pause();
+        hungerAudioRef.current = null;
+      }
+    };
   }, [isHungry]);
 
   // poll partner updates

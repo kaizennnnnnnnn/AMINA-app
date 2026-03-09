@@ -162,6 +162,7 @@ export default function AppPage() {
 
   function handleNavClick(newTab: typeof tab) {
     setTab(newTab);
+    new Audio('/sounds/nav-click.mp3').play().catch(() => {});
     const id = Date.now() + Math.random();
     setNavHearts(prev => [...prev, { id, forTab: newTab }]);
     setTimeout(() => setNavHearts(prev => prev.filter(h => h.id !== id)), 1000);
