@@ -1303,7 +1303,7 @@ async function deleteLetter(letter: Letter) {
   <div className="flex items-start justify-between gap-3">
     <div className="space-y-3">
       <div className={`header-chip ${getAccentChipClass()}`}>
-        Private couple space
+        Our place 
       </div>
 
       <div>
@@ -1758,14 +1758,12 @@ async function deleteLetter(letter: Letter) {
     visibleLetters.map((l) => (
       <div key={l.id} className="rounded-2xl border border-zinc-800 p-3">
         <div className="mb-2 flex items-center justify-between gap-2">
-          <p className="text-xs text-zinc-500">
-            {l.mode === 'capsule' ? 'Time capsule' : 'Normal'}
+          <div className="text-xs text-zinc-500">
+            <span>{l.mode === 'capsule' ? 'Time capsule' : 'Normal'}</span>
             {l.created_at ? (
-  <p className="text-xs text-zinc-500">
-    Sent: {new Date(l.created_at).toLocaleString()}
-  </p>
-) : null}
-          </p>
+              <span className="block">Sent: {new Date(l.created_at).toLocaleString()}</span>
+            ) : null}
+          </div>
 
           {l.sender_id === userId ? (
             <button
