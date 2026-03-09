@@ -67,7 +67,8 @@ type SentenceGame = {
 type AppOpen = {
   opened_on: string;
 };
-type AccentColor = 'pink' | 'purple' | 'red';
+type AccentColor = 'default' | 'white' | 'pink' | 'purple' | 'red' | 'sage' | 'sky' | 'peach';
+type BtnColor = 'pink' | 'purple' | 'red' | 'sage' | 'sky' | 'peach';
 
 type Profile = {
   user_id: string;
@@ -140,7 +141,13 @@ export default function AppPage() {
   const [myName, setMyName] = useState('');
   const [coupleNickname, setCoupleNickname] = useState('');
   const [relationshipStartDate, setRelationshipStartDate] = useState('');
-  const [accentColor, setAccentColor] = useState<AccentColor>('pink');
+  const [accentColor, setAccentColor] = useState<AccentColor>('default');
+  const [btnColor, setBtnColor] = useState<BtnColor>(() => {
+    if (typeof window !== 'undefined') {
+      return (localStorage.getItem('btnColor') as BtnColor) || 'pink';
+    }
+    return 'pink';
+  });
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreviewUrl, setAvatarPreviewUrl] = useState('');
   const [pushEnabled, setPushEnabled] = useState(false);
@@ -158,6 +165,15 @@ export default function AppPage() {
     init();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [refreshKey]);
+  useEffect(() => {
+    // 'default' maps to the CSS [data-bg="dark"] selector
+    document.documentElement.dataset.bg = accentColor === 'default' ? 'dark' : accentColor;
+  }, [accentColor]);
+
+  useEffect(() => {
+    document.documentElement.dataset.btn = btnColor;
+    localStorage.setItem('btnColor', btnColor);
+  }, [btnColor]);
   useEffect(() => {
   if (!avatarFile) {
     setAvatarPreviewUrl('');
@@ -306,7 +322,7 @@ setPartnerProfile(partnerProfileRow);
 setMyName(myProfileRow?.display_name ?? '');
 setCoupleNickname(coupleSettingsRow?.couple_nickname ?? '');
 setRelationshipStartDate(coupleSettingsRow?.relationship_start_date ?? '');
-setAccentColor((coupleSettingsRow?.accent_color as AccentColor) ?? 'pink');
+setAccentColor((coupleSettingsRow?.accent_color as AccentColor) ?? 'default');
       setQuestions((questionsRes.data ?? []) as Question[]);
       setNudges((nudgesRes.data ?? []) as Nudge[]);
       setCustomPrompts((promptsRes.data ?? []) as CustomPrompt[]);
@@ -357,27 +373,11 @@ setAccentColor((coupleSettingsRow?.accent_color as AccentColor) ?? 'pink');
   return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 }
 function getAccentButtonClass() {
-  if (accentColor === 'purple') {
-    return 'bg-gradient-to-r from-violet-500 to-fuchsia-600 text-white';
-  }
-
-  if (accentColor === 'red') {
-    return 'bg-gradient-to-r from-rose-500 to-red-600 text-white';
-  }
-
-  return 'btn-pink';
+  return 'btn-accent';
 }
 
 function getAccentChipClass() {
-  if (accentColor === 'purple') {
-    return 'bg-violet-500/10 text-violet-200 border border-violet-400/20';
-  }
-
-  if (accentColor === 'red') {
-    return 'bg-rose-500/10 text-rose-200 border border-rose-400/20';
-  }
-
-  return 'bg-pink-500/10 text-pink-200 border border-pink-400/20';
+  return 'chip-themed';
 }
 
 function getInitial(value: string | null | undefined, fallback: string) {
@@ -1088,6 +1088,19 @@ async function deleteLetter(letter: Letter) {
     setBusyAction(null);
   }
 }
+
+  async function deleteBucketItem(id: string) {
+    try {
+      setBusyAction(`delete-bucket-${id}`);
+      const { error } = await supabase.from('bucket_items').delete().eq('id', id);
+      if (error) throw error;
+      setRefreshKey((x) => x + 1);
+    } catch (error: any) {
+      setMsg(error.message || 'Could not delete item.');
+    } finally {
+      setBusyAction(null);
+    }
+  }
 
   async function toggleBucketItem(id: string, current: boolean) {
     try {
@@ -1921,16 +1934,30 @@ async function deleteLetter(letter: Letter) {
             <div className="space-y-2 pt-2">
   {bucketItems.length ? (
     bucketItems.map((item) => (
-      <button
+      <div
         key={item.id}
-        className="flex w-full items-center justify-between rounded-2xl border border-zinc-800 p-3 text-left"
-        onClick={() => toggleBucketItem(item.id, item.is_done)}
+        className="flex w-full items-center gap-2 rounded-2xl border border-zinc-800 p-3"
       >
-        <span className={item.is_done ? 'line-through text-zinc-500' : ''}>
-          {item.title}
-        </span>
-        <span>{item.is_done ? '✅' : '⬜'}</span>
-      </button>
+        <button
+          type="button"
+          className="flex flex-1 items-center justify-between text-left gap-2"
+          onClick={() => toggleBucketItem(item.id, item.is_done)}
+        >
+          <span className={item.is_done ? 'line-through text-zinc-500 text-sm' : 'text-sm'}>
+            {item.title}
+          </span>
+          <span className="shrink-0">{item.is_done ? '✅' : '⬜'}</span>
+        </button>
+        <button
+          type="button"
+          title="Delete item"
+          className="shrink-0 text-zinc-600 hover:text-rose-400 transition-colors text-lg leading-none px-1"
+          onClick={() => deleteBucketItem(item.id)}
+          disabled={isBusy(`delete-bucket-${item.id}`)}
+        >
+          {isBusy(`delete-bucket-${item.id}`) ? '·' : '×'}
+        </button>
+      </div>
     ))
   ) : (
     <div className="empty-state">
@@ -2020,45 +2047,59 @@ async function deleteLetter(letter: Letter) {
     />
   </div>
 
-  <div className="space-y-2">
-    <p className="text-sm text-zinc-300">App accent color</p>
+  <div className="space-y-3">
+    <p className="text-sm text-zinc-300">Background color</p>
+    <div className="themed-divider" />
+    <div className="grid grid-cols-4 gap-2">
+      {(
+        [
+          { value: 'default', label: 'Black'  },
+          { value: 'white',   label: 'White'  },
+          { value: 'pink',    label: 'Rose'   },
+          { value: 'purple',  label: 'Violet' },
+          { value: 'red',     label: 'Red'    },
+          { value: 'sage',    label: 'Green'  },
+          { value: 'sky',     label: 'Blue'   },
+          { value: 'peach',   label: 'Peach'  },
+        ] as { value: AccentColor; label: string }[]
+      ).map(({ value, label }) => (
+        <button
+          key={value}
+          type="button"
+          className={`color-swatch-btn${accentColor === value ? ' active' : ''}`}
+          onClick={() => setAccentColor(value)}
+        >
+          <span className={`color-swatch swatch-${value}`} />
+          <span className="text-xs text-zinc-400">{label}</span>
+        </button>
+      ))}
+    </div>
+  </div>
 
+  <div className="space-y-3">
+    <p className="text-sm text-zinc-300">Button color</p>
+    <div className="themed-divider" />
     <div className="grid grid-cols-3 gap-2">
-      <button
-        type="button"
-        className={`btn ${
-          accentColor === 'pink'
-            ? 'bg-pink-500 text-white border border-pink-300/30'
-            : 'btn-dark'
-        }`}
-        onClick={() => setAccentColor('pink')}
-      >
-        Pink
-      </button>
-
-      <button
-        type="button"
-        className={`btn ${
-          accentColor === 'purple'
-            ? 'bg-violet-500 text-white border border-violet-300/30'
-            : 'btn-dark'
-        }`}
-        onClick={() => setAccentColor('purple')}
-      >
-        Purple
-      </button>
-
-      <button
-        type="button"
-        className={`btn ${
-          accentColor === 'red'
-            ? 'bg-rose-500 text-white border border-rose-300/30'
-            : 'btn-dark'
-        }`}
-        onClick={() => setAccentColor('red')}
-      >
-        Red
-      </button>
+      {(
+        [
+          { value: 'pink',   label: 'Rose'   },
+          { value: 'purple', label: 'Violet' },
+          { value: 'red',    label: 'Red'    },
+          { value: 'sage',   label: 'Sage'   },
+          { value: 'sky',    label: 'Sky'    },
+          { value: 'peach',  label: 'Peach'  },
+        ] as { value: BtnColor; label: string }[]
+      ).map(({ value, label }) => (
+        <button
+          key={value}
+          type="button"
+          className={`color-swatch-btn${btnColor === value ? ' active' : ''}`}
+          onClick={() => setBtnColor(value)}
+        >
+          <span className={`color-swatch swatch-btn-${value}`} />
+          <span className="text-xs text-zinc-400">{label}</span>
+        </button>
+      ))}
     </div>
   </div>
 
