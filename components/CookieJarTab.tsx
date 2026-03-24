@@ -188,15 +188,15 @@ export default function CookieJarTab({
       if(st==='twist'){stT+=dt;const t=clamp(stT/.82,0,1),e=eio(t);lid.x=lid.tx;lid.y=lid.ay+(lid.ty-lid.ay)*e+Math.sin(t*Math.PI*5)*(1-t)*1.2;lid.rot=4.8*(1-e)+Math.sin(t*Math.PI*3)*(1-t)*2.4;if(t>=1){topClosed=true;lid.y=lid.ty;lid.rot=0;st='sealed';setPhase('ready');}}
       if(st==='sealed'){lid.x=lid.tx;lid.y=lid.ty;lid.rot=0;}
       shakeV+=(-shakeX)*C.shakeK;shakeV*=C.shakeDamp;shakeX+=shakeV;
-      jarGroup.setAttribute('transform',`translate(${shakeX.toFixed(2)} 0)`);
-      lidGroupEl.setAttribute('transform',`translate(${(lid.x-400).toFixed(2)} ${(lid.y-114).toFixed(2)}) rotate(${lid.rot.toFixed(2)} 400 114)`);
+      jarGroup!.setAttribute('transform',`translate(${shakeX.toFixed(2)} 0)`);
+      lidGroupEl!.setAttribute('transform',`translate(${(lid.x-400).toFixed(2)} ${(lid.y-114).toFixed(2)}) rotate(${lid.rot.toFixed(2)} 400 114)`);
       physics(dt);
       for(const c of cookies)c.g.setAttribute('transform',`translate(${c.x.toFixed(1)} ${c.y.toFixed(1)}) rotate(${c.rot.toFixed(1)})`);
       animId=requestAnimationFrame(tick);
     }
 
     animId=requestAnimationFrame(tick);
-    return () => { cancelAnimationFrame(animId); while(cookieLayer.firstChild)cookieLayer.removeChild(cookieLayer.firstChild); };
+    return () => { cancelAnimationFrame(animId); while(cookieLayer!.firstChild)cookieLayer!.removeChild(cookieLayer!.firstChild); };
   }, []);
 
   // ── cookie fly-out animation ───────────────────────────────────
