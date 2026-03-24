@@ -305,7 +305,7 @@ export default function CookieJarTab({
             <p className="text-xs text-zinc-500 mb-0.5">{myName}</p>
             <p className="text-2xl font-bold leading-none">{myCnt} 🍪</p>
           </div>
-          <p className="text-sm font-semibold text-zinc-400">Cookie Jar</p>
+          <p className="text-sm font-semibold text-zinc-400">Cookies eaten</p>
           <div className="text-center">
             <p className="text-xs text-zinc-500 mb-0.5">{partnerName}</p>
             <p className="text-2xl font-bold leading-none">{partnerCnt} 🍪</p>
