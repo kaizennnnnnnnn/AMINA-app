@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { DEFAULT_PHOTO_PROMPTS } from '@/lib/default-prompts';
 import CatHungerGame from "@/components/CatHungerGame";
+import CookieJarTab from "@/components/CookieJarTab";
 type Question = {
   id: string;
   asked_by: string;
@@ -96,7 +97,7 @@ export default function AppPage() {
   const [coupleId, setCoupleId] = useState<string | null>(null);
   const [savedInviteCode, setSavedInviteCode] = useState('');
   const [joinCode, setJoinCode] = useState('');
-  const [tab, setTab] = useState<'today' | 'moments' | 'letters' | 'play' | 'cat' | 'us'>('today');
+  const [tab, setTab] = useState<'today' | 'moments' | 'letters' | 'play' | 'cat' | 'us' | 'jar'>('today');
   const [msg, setMsg] = useState('');
 
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -2123,6 +2124,15 @@ async function deleteLetter(letter: Letter) {
         </>
         )}
 
+        {tab === 'jar' && (
+          <CookieJarTab
+            coupleId={coupleId}
+            userId={userId}
+            myName={myName || myProfile?.display_name || 'You'}
+            partnerName={partnerProfile?.display_name || 'Partner'}
+          />
+        )}
+
         </div>
 
         {msg ? (
@@ -2148,7 +2158,7 @@ async function deleteLetter(letter: Letter) {
       </div>
 
       <nav className="bottom-nav fixed bottom-0 left-0 right-0 px-3 py-3">
-        <div className="mx-auto grid max-w-md grid-cols-6 gap-1">
+        <div className="mx-auto grid max-w-md grid-cols-7 gap-1">
           {(
             [
               { id: 'today',   label: 'Today'  },
@@ -2157,6 +2167,7 @@ async function deleteLetter(letter: Letter) {
               { id: 'play',    label: 'Play'   },
               { id: 'cat',     label: '🐱'     },
               { id: 'us',      label: 'Asevin' },
+              { id: 'jar',     label: '🍪'     },
             ] as const
           ).map(({ id: navId, label }) => (
             <button
