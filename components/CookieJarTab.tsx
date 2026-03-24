@@ -156,7 +156,7 @@ export default function CookieJarTab({
         g.appendChild(c);
       }
 
-      cookieLayer.appendChild(g);
+      cookieLayer!.appendChild(g);
       return { x:C.cx+rand(-54,54), y:rand(-165,-80), vx:rand(-24,24), vy:rand(32,78), r, rot:rand(0,360), vr:rand(-10,10), g, settleScore:0, sleeping:false };
     }
 
