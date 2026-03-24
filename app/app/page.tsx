@@ -1408,6 +1408,54 @@ async function deleteLetter(letter: Letter) {
             </section>
 
             <section className="card space-y-3">
+              <h2 className="section-title">Tiny love note</h2>
+              <div className="grid grid-cols-3 gap-2">
+                <button type="button" className="btn btn-dark" onClick={() => sendNudge('thinking')}>
+                  Thinking of you
+                </button>
+                <button type="button" className="btn btn-dark" onClick={() => sendNudge('heart')}>
+                  ❤️
+                </button>
+                <button type="button" className="btn btn-dark" onClick={() => sendNudge('kiss')}>
+                  Pegasus
+                </button>
+              </div>
+              <p className="text-sm text-zinc-400">
+                Total: {nudgeCount} · ❤️ {heartCount} · 😘 {kissCount} · 💭 {thinkingCount}
+              </p>
+              <div className="space-y-3 pt-2">
+  <h3 className="section-title">
+    Upload today's photo
+  </h3>
+
+  <input
+    aria-label="Photo caption for today's prompt"
+    className="input"
+    placeholder="Optional caption"
+    value={momentCaption}
+    onChange={(e) => setMomentCaption(e.currentTarget.value)}
+  />
+
+  <input
+    aria-label="Choose photo for today's prompt"
+    className="input"
+    type="file"
+    accept="image/*"
+    onChange={(e) => setMomentFile(e.currentTarget.files?.[0] ?? null)}
+  />
+
+  <button
+  type="button"
+  className={`btn ... ${getAccentButtonClass()}`}
+  onClick={() => uploadMoment('day')}
+  disabled={isBusy('uploadMoment')}
+>
+  {isBusy('uploadMoment') ? 'Uploading...' : "Upload today's photo"}
+</button>
+</div>
+            </section>
+
+            <section className="card space-y-3">
               <h2 className="section-title">Random question</h2>
               <input
                 aria-label="Ask a random question"
@@ -1481,53 +1529,6 @@ async function deleteLetter(letter: Letter) {
   <span className="empty-state-text">Ask the first random question.</span>
 </div>
   )}
-</div>
-            </section>
-
-            <section className="card space-y-3">
-              <h2 className="section-title">Tiny love note</h2>
-              <div className="grid grid-cols-3 gap-2">
-                <button className="btn btn-dark" onClick={() => sendNudge('thinking')}>
-                  Thinking of you
-                </button>
-                <button className="btn btn-dark" onClick={() => sendNudge('heart')}>
-                  ❤️
-                </button>
-                <button className="btn btn-dark" onClick={() => sendNudge('kiss')}>
-                  Pegasus
-                </button>
-              </div>
-              <p className="text-sm text-zinc-400">
-                Total: {nudgeCount} · ❤️ {heartCount} · 😘 {kissCount} · 💭 {thinkingCount}
-              </p>
-              <div className="space-y-3 pt-2">
-  <h3 className="section-title">
-    Upload today's photo
-  </h3>
-
-  <input
-    aria-label="Photo caption for today's prompt"
-    className="input"
-    placeholder="Optional caption"
-    value={momentCaption}
-    onChange={(e) => setMomentCaption(e.currentTarget.value)}
-  />
-
-  <input
-    aria-label="Choose photo for today's prompt"
-    className="input"
-    type="file"
-    accept="image/*"
-    onChange={(e) => setMomentFile(e.currentTarget.files?.[0] ?? null)}
-  />
-
-  <button
-  className={`btn ... ${getAccentButtonClass()}`}
-  onClick={() => uploadMoment('day')}
-  disabled={isBusy('uploadMoment')}
->
-  {isBusy('uploadMoment') ? 'Uploading...' : "Upload today's photo"}
-</button>
 </div>
             </section>
 

@@ -63,15 +63,17 @@ export default function CookieJarTab({
 
   // ── load ──────────────────────────────────────────────────────
   async function loadData() {
-    if (!coupleId) return;
+    if (!coupleId || !userId) return;
     const [{ data: itms }, { data: counts }] = await Promise.all([
       supabase.from('cookie_jar_items').select('id,url,label').eq('couple_id', coupleId).order('created_at'),
       supabase.from('cookie_counts').select('user_id,count').eq('couple_id', coupleId),
     ]);
     setItems(itms ?? []);
-    const myRow    = (counts ?? []).find((c: any) => c.user_id === userId);
+    const myRow      = (counts ?? []).find((c: any) => c.user_id === userId);
     const partnerRow = (counts ?? []).find((c: any) => c.user_id !== userId);
-    setMyCnt(myRow?.count ?? 0);
+    // localStorage is the reliable local source; DB is for partner sync
+    const localCount = parseInt(localStorage.getItem(`cookie_count_${userId}`) ?? '0', 10);
+    setMyCnt(Math.max(myRow?.count ?? 0, localCount));
     setPartnerCnt(partnerRow?.count ?? 0);
   }
   useEffect(() => { loadData(); }, [coupleId, userId]);
@@ -276,6 +278,7 @@ export default function CookieJarTab({
     setRevealed(null);
     const newCount = myCntRef.current + 1;
     setMyCnt(newCount);
+    localStorage.setItem(`cookie_count_${userId}`, String(newCount));
     spawnFlyingCookie(item);
     // fallback: show link after animation duration even if animation fails
     setTimeout(() => { if (mountedRef.current) setRevealed(item); }, 820);
