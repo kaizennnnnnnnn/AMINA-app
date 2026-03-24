@@ -84,7 +84,7 @@ export default function CookieJarTab({
     const C = {
       gravity: 1450, air: 0.0014, floorY: 533,
       cx: 400, openY: 129, neckY: 168, bHW: 97, nHW: 84,
-      maxC: 15, spawnInt: 0.22, shakeDamp: 0.74, shakeK: 0.09,
+      maxC: 15, spawnInt: 0.133, shakeDamp: 0.74, shakeK: 0.09,
     };
     type Cookie = { x:number;y:number;vx:number;vy:number;r:number;rot:number;vr:number;g:Element;settleScore:number;sleeping:boolean };
 
@@ -183,9 +183,9 @@ export default function CookieJarTab({
     function tick(ts:number) {
       if(!lastTs)lastTs=ts;
       const dt=Math.min((ts-lastTs)/1000,.022);lastTs=ts;
-      if(st==='fill'){spawnT+=dt;elapsed+=dt;if(spawned<C.maxC&&spawnT>=C.spawnInt){spawnT=0;cookies.push(makeCookie());spawned++;}const settled=cookies.filter(c=>c.sleeping).length;if((spawned>=C.maxC&&cookies.every(c=>c.y>115)&&settled>C.maxC*.5&&elapsed>3.8)||(elapsed>7.4&&spawned>=C.maxC)){st='closing';stT=0;}}
-      if(st==='closing'){stT+=dt;const e=eio(clamp(stT/.48,0,1));lid.x=940+(lid.tx-940)*e;lid.y=24+(lid.ay-24)*e;lid.rot=-16+20*e;if(stT>=.48){st='twist';stT=0;}}
-      if(st==='twist'){stT+=dt;const t=clamp(stT/.82,0,1),e=eio(t);lid.x=lid.tx;lid.y=lid.ay+(lid.ty-lid.ay)*e+Math.sin(t*Math.PI*5)*(1-t)*1.2;lid.rot=4.8*(1-e)+Math.sin(t*Math.PI*3)*(1-t)*2.4;if(t>=1){topClosed=true;lid.y=lid.ty;lid.rot=0;st='sealed';setPhase('ready');}}
+      if(st==='fill'){spawnT+=dt;elapsed+=dt;if(spawned<C.maxC&&spawnT>=C.spawnInt){spawnT=0;cookies.push(makeCookie());spawned++;}const settled=cookies.filter(c=>c.sleeping).length;if((spawned>=C.maxC&&cookies.every(c=>c.y>115)&&settled>C.maxC*.3)||(elapsed>2.5&&spawned>=C.maxC)){st='closing';stT=0;}}
+      if(st==='closing'){stT+=dt;const e=eio(clamp(stT/.60,0,1));lid.x=940+(lid.tx-940)*e;lid.y=24+(lid.ay-24)*e;lid.rot=-16+20*e;if(stT>=.60){st='twist';stT=0;}}
+      if(st==='twist'){stT+=dt;const t=clamp(stT/.90,0,1),e=eio(t);lid.x=lid.tx;lid.y=lid.ay+(lid.ty-lid.ay)*e+Math.sin(t*Math.PI*5)*(1-t)*1.2;lid.rot=4.8*(1-e)+Math.sin(t*Math.PI*3)*(1-t)*2.4;if(t>=1){topClosed=true;lid.y=lid.ty;lid.rot=0;st='sealed';setPhase('ready');}}
       if(st==='sealed'){lid.x=lid.tx;lid.y=lid.ty;lid.rot=0;}
       shakeV+=(-shakeX)*C.shakeK;shakeV*=C.shakeDamp;shakeX+=shakeV;
       jarGroup!.setAttribute('transform',`translate(${shakeX.toFixed(2)} 0)`);
