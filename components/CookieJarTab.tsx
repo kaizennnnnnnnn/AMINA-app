@@ -56,19 +56,23 @@ export default function CookieJarTab({
   phaseRef.current = phase;
   const itemsRef = useRef(items);
   itemsRef.current = items;
+  const myCntRef = useRef(0);
+  myCntRef.current = myCnt;
 
   useEffect(() => { return () => { mountedRef.current = false; }; }, []);
 
   // ── load ──────────────────────────────────────────────────────
   async function loadData() {
     if (!coupleId) return;
-    const [{ data: itms }, { data: pulls }] = await Promise.all([
+    const [{ data: itms }, { data: counts }] = await Promise.all([
       supabase.from('cookie_jar_items').select('id,url,label').eq('couple_id', coupleId).order('created_at'),
-      supabase.from('cookie_pulls').select('user_id').eq('couple_id', coupleId),
+      supabase.from('cookie_counts').select('user_id,count').eq('couple_id', coupleId),
     ]);
     setItems(itms ?? []);
-    setMyCnt((pulls ?? []).filter((p: any) => p.user_id === userId).length);
-    setPartnerCnt((pulls ?? []).filter((p: any) => p.user_id !== userId).length);
+    const myRow    = (counts ?? []).find((c: any) => c.user_id === userId);
+    const partnerRow = (counts ?? []).find((c: any) => c.user_id !== userId);
+    setMyCnt(myRow?.count ?? 0);
+    setPartnerCnt(partnerRow?.count ?? 0);
   }
   useEffect(() => { loadData(); }, [coupleId, userId]);
 
@@ -270,11 +274,15 @@ export default function CookieJarTab({
     if (!list.length || !coupleId || !userId) return;
     const item = list[Math.floor(Math.random() * list.length)];
     setRevealed(null);
-    setMyCnt(n => n + 1);
+    const newCount = myCntRef.current + 1;
+    setMyCnt(newCount);
     spawnFlyingCookie(item);
     // fallback: show link after animation duration even if animation fails
     setTimeout(() => { if (mountedRef.current) setRevealed(item); }, 820);
-    supabase.from('cookie_pulls').insert({ couple_id: coupleId, user_id: userId, item_id: item.id });
+    supabase.from('cookie_counts').upsert(
+      { couple_id: coupleId, user_id: userId, count: newCount },
+      { onConflict: 'couple_id,user_id' }
+    );
   }
 
   // ── add / delete song ─────────────────────────────────────────
