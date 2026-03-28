@@ -61,7 +61,14 @@ export default function CookieJarTab({
 
   useEffect(() => { return () => { mountedRef.current = false; }; }, []);
 
-  // ── load ──────────────────────────────────────────────────────
+  // ── restore my count from localStorage immediately ─────────────
+  useEffect(() => {
+    if (!coupleId) return;
+    const saved = parseInt(localStorage.getItem(`jar_my_${coupleId}`) ?? '0', 10);
+    if (saved > 0) setMyCnt(saved);
+  }, [coupleId]);
+
+  // ── load songs + partner count from DB ─────────────────────────
   async function loadData() {
     if (!coupleId || !userId) return;
     const [{ data: itms }, { data: counts }] = await Promise.all([
@@ -69,12 +76,14 @@ export default function CookieJarTab({
       supabase.from('cookie_counts').select('user_id,count').eq('couple_id', coupleId),
     ]);
     setItems(itms ?? []);
-    const myRow      = (counts ?? []).find((c: any) => c.user_id === userId);
     const partnerRow = (counts ?? []).find((c: any) => c.user_id !== userId);
-    // localStorage is the reliable local source; DB is for partner sync
-    const localCount = parseInt(localStorage.getItem(`cookie_count_${userId}`) ?? '0', 10);
-    setMyCnt(Math.max(myRow?.count ?? 0, localCount));
     setPartnerCnt(partnerRow?.count ?? 0);
+    // take max of localStorage and DB for own count
+    const local = parseInt(localStorage.getItem(`jar_my_${coupleId}`) ?? '0', 10);
+    const dbCount = (counts ?? []).find((c: any) => c.user_id === userId)?.count ?? 0;
+    const best = Math.max(local, dbCount);
+    if (best > 0) setMyCnt(best);
+    if (best > local) localStorage.setItem(`jar_my_${coupleId}`, String(best));
   }
   useEffect(() => { loadData(); }, [coupleId, userId]);
 
@@ -278,7 +287,7 @@ export default function CookieJarTab({
     setRevealed(null);
     const newCount = myCntRef.current + 1;
     setMyCnt(newCount);
-    localStorage.setItem(`cookie_count_${userId}`, String(newCount));
+    localStorage.setItem(`jar_my_${coupleId}`, String(newCount));
     spawnFlyingCookie(item);
     // fallback: show link after animation duration even if animation fails
     setTimeout(() => { if (mountedRef.current) setRevealed(item); }, 820);
